@@ -40,8 +40,8 @@ export const Footer: React.FC = () => {
         </div>
 
         <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2 text-slate-400">
-          <p>© {new Date().getFullYear()} Smriti AI Next. Production Architecture.</p>
-          <p>Phase 1 Foundation • Never Exposes Secrets • Zero Mock AI Responses</p>
+          <p>© {new Date().getFullYear()} Smriti AI. Production Architecture.</p>
+          <p>Personal AI Memory Assistant • Secure & Private</p>
         </div>
       </div>
     </footer>

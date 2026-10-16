@@ -14,11 +14,8 @@ export const Header: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold tracking-tight text-white">
-                  Smriti AI <span className="text-violet-400 font-semibold">Next</span>
+                  Smriti AI
                 </h1>
-                <Badge variant="violet" className="text-[10px] py-0.5 px-2">
-                  Phase 1
-                </Badge>
               </div>
               <p className="text-xs text-slate-300">
                 Remember what matters. Let AI handle the rest.

@@ -1,4 +1,20 @@
 import type { HealthResponse, GeminiTestResponse } from '@api/_utils/serverTypes';
+import type { Memory, Reminder, ProposedAction } from '../types';
+
+export interface ChatRequestPayload {
+  message: string;
+  history?: Array<{ role: string; content: string }>;
+  memories?: Memory[];
+  reminders?: Reminder[];
+  currentDateTime?: string;
+  userTimezone?: string;
+}
+
+export interface ChatResponsePayload {
+  reply: string;
+  action: ProposedAction | null;
+  model: string;
+}
 
 export async function fetchHealthCheck(): Promise<HealthResponse> {
   const response = await fetch('/api/health', {
@@ -37,4 +53,23 @@ export async function runGeminiConnectivityTest(): Promise<GeminiTestResponse> {
   }
 
   return data as GeminiTestResponse;
+}
+
+export async function sendChatMessage(payload: ChatRequestPayload): Promise<ChatResponsePayload> {
+  const response = await fetch('/api/chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data?.error || `AI Chat request failed with status ${response.status}`);
+  }
+
+  return data as ChatResponsePayload;
 }

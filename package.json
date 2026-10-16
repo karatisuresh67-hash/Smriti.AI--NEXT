@@ -1,9 +1,9 @@
 {
-  "name": "smriti-ai-next",
+  "name": "smriti-ai",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
-  "description": "Smriti AI Next — Full-scale personal AI memory assistant.",
+  "description": "Smriti AI — Remember What Matters. Let AI Handle the Rest.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -12,12 +12,22 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/local-notifications": "^8.3.1",
+    "@fullcalendar/core": "^6.1.15",
+    "@fullcalendar/daygrid": "^6.1.15",
+    "@fullcalendar/interaction": "^6.1.15",
+    "@fullcalendar/react": "^6.1.15",
+    "@fullcalendar/timegrid": "^6.1.15",
     "@google/genai": "^2.3.0",
+    "@supabase/supabase-js": "^2.48.1",
     "lucide-react": "^1.16.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.3",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@types/node": "^20.17.19",

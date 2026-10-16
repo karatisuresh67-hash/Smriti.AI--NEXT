@@ -28,5 +28,6 @@
     },
     "types": ["vite/client"]
   },
-  "include": ["src", "api"]
+  "include": ["src", "api"],
+  "exclude": ["src/test", "**/*.test.ts", "**/*.test.tsx"]
 }
