@@ -178,8 +178,12 @@ ${remindersText}
     }
 
     if (typeof parsedResult.reply !== 'string') {
-      parsedResult.reply = String(parsedResult.reply || 'Here is what I found.');
-    }
+  if (parsedResult.reply && typeof parsedResult.reply === 'object') {
+    parsedResult.reply = JSON.stringify(parsedResult.reply, null, 2);
+  } else {
+    parsedResult.reply = 'Sorry, I could not generate a valid text response. Please try again.';
+  }
+}
 
     if (parsedResult.action) {
       const act = parsedResult.action;
