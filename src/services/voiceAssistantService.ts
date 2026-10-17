@@ -135,7 +135,10 @@ export class VoiceAssistantService {
       if (data.token && !data.fallbackRequired) {
         // Live API session attempt
         try {
-          const ai = new GoogleGenAI({ apiKey: data.token });
+          const ai = new GoogleGenAI({
+  apiKey: data.token,
+  httpOptions: { apiVersion: 'v1alpha' }
+});
           this.liveSession = await (ai as any).live?.connect({
             model: data.model || 'gemini-3.8-live',
             config: {
