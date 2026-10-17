@@ -53,7 +53,7 @@ export function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-navy-900 tracking-tight">
-            {getGreeting()}, {settings.displayName || 'Suresh'} 👋
+            {getGreeting()}, {settings.displayName || 'User'} 👋
           </h1>
           <p className="text-sm text-slate-500 font-medium mt-0.5">
             {formatCurrentDate()} • Smriti AI is active and ready

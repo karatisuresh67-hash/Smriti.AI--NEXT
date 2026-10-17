@@ -1,10 +1,25 @@
 import React from 'react';
 import { Brain, Sparkles } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 import { NotificationDropdown } from './NotificationDropdown';
 
 export function Navbar() {
   const { currentTab, setCurrentTab, settings } = useApp();
+  const { user, profile } = useAuth();
+
+  const avatarUrl =
+    profile?.avatar_url ||
+    user?.user_metadata?.avatar_url ||
+    user?.user_metadata?.picture ||
+    null;
+
+  const displayName =
+    profile?.display_name ||
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    settings.displayName ||
+    'User';
 
   const getPageTitle = () => {
     switch (currentTab) {
@@ -59,20 +74,24 @@ export function Navbar() {
           className="flex items-center space-x-2 pl-2 pr-2.5 py-1 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200"
           aria-label="User settings"
         >
-          {settings.avatarUrl ? (
-            <img 
-              src={settings.avatarUrl} 
-              alt={settings.displayName || 'User'} 
-              className="w-7 h-7 rounded-full object-cover shadow-sm" 
-            />
-          ) : (
-            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-violet-600 to-indigo-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">
-              {settings.displayName ? settings.displayName[0].toUpperCase() : 'U'}
-            </div>
-          )}
-          <span className="text-xs font-medium text-slate-700 hidden sm:inline">
-            {settings.displayName || 'User'}
-          </span>
+          {avatarUrl ? (
+  <img
+    src={avatarUrl}
+    alt={displayName}
+    referrerPolicy="no-referrer"
+    onError={(event) => {
+      event.currentTarget.style.display = 'none';
+    }}
+    className="w-7 h-7 rounded-full object-cover shadow-sm"
+  />
+) : (
+  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-violet-600 to-indigo-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">
+    {displayName[0]?.toUpperCase() || 'U'}
+  </div>
+)}
+<span className="text-xs font-medium text-slate-700 hidden sm:inline">
+  {displayName}
+</span>
         </button>
       </div>
     </header>

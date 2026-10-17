@@ -45,16 +45,16 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
 
   const [currentTab, setCurrentTab] = useState<AppTab>('dashboard');
   const [memories, setMemories] = useState<Memory[]>([]);
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [settings, setSettings] = useState<UserSettings>({
-    displayName: 'Suresh',
-    voiceResponse: true,
-    notificationsEnabled: false,
-  });
+  displayName: '',
+  voiceResponse: true,
+  notificationsEnabled: false,
+});
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [isLoadingData, setIsLoadingData] = useState<boolean>(false);
@@ -109,7 +109,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setReminders(storageService.getLocalReminders());
         setActivities(storageService.getLocalActivities());
       }
-      setSettings(storageService.getSettings());
+      const savedSettings = storageService.getSettings(user?.id);
+
+setSettings({
+  ...savedSettings,
+  displayName: profile?.display_name || user?.user_metadata?.full_name || user?.user_metadata?.name || savedSettings.displayName || '',
+});
     } catch (err: any) {
       console.warn('[AppContext] Error refreshing data from Supabase:', err);
       setDataError(err?.message || 'Error synchronizing with Supabase');
@@ -121,7 +126,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setIsLoaded(true);
       setIsLoadingData(false);
     }
-  }, [user]);
+  }, [user, profile]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -242,7 +247,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // ============================================================================
 
   const updateSettings = useCallback((updates: Partial<UserSettings>) => {
-    const updated = storageService.updateSettings(updates);
+    const updated = storageService.updateSettings(updates, user?.id);
     setSettings(updated);
     addToast('Settings saved', 'success');
     return updated;

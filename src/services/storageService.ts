@@ -285,7 +285,7 @@ const getDemoReminders = (): Reminder[] => {
 };
 
 const defaultSettings: UserSettings = {
-  displayName: 'Suresh',
+  displayName: '',
   voiceResponse: true,
   notificationsEnabled: false,
 };
@@ -847,22 +847,41 @@ class StorageService {
   // SETTINGS & LOCAL STORAGE HELPERS
   // ============================================================================
 
-  public getSettings(): UserSettings {
+  
+  public getSettings(userId?: string): UserSettings {
     if (!this.isBrowser()) return defaultSettings;
+
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-      return data ? { ...defaultSettings, ...JSON.parse(data) } : defaultSettings;
+      const settingsKey = userId
+        ? `${STORAGE_KEYS.SETTINGS}_${userId}`
+        : STORAGE_KEYS.SETTINGS;
+
+      const data = localStorage.getItem(settingsKey);
+
+      return data
+        ? { ...defaultSettings, ...JSON.parse(data) }
+        : defaultSettings;
     } catch {
       return defaultSettings;
     }
   }
 
-  public updateSettings(updates: Partial<UserSettings>): UserSettings {
-    const current = this.getSettings();
+  public updateSettings(
+    updates: Partial<UserSettings>,
+    userId?: string
+  ): UserSettings {
+    const current = this.getSettings(userId);
     const merged = { ...current, ...updates };
-    this.saveToStorage(STORAGE_KEYS.SETTINGS, merged);
+
+    const settingsKey = userId
+      ? `${STORAGE_KEYS.SETTINGS}_${userId}`
+      : STORAGE_KEYS.SETTINGS;
+
+    this.saveToStorage(settingsKey, merged);
+
     return merged;
   }
+
 
   public resetToDemo(): void {
     if (!this.isBrowser()) return;
