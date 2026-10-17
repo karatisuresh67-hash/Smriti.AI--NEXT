@@ -1,6 +1,6 @@
 import { GoogleGenAI, Modality } from '@google/genai';
 import type { ApiRequest, ApiResponse } from '../_utils/serverTypes';
-import { getGeminiApiKey } from '../_utils/env';
+import { getGeminiApiKey } from '../_utils/env.js';
 
 /**
  * Serverless API Endpoint: /api/voice/session-token

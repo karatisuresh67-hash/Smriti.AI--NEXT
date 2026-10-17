@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import type { ApiRequest, ApiResponse } from '../_utils/serverTypes';
-import { getGeminiApiKey, getGeminiModel } from '../_utils/env';
+import { getGeminiApiKey, getGeminiModel } from '../_utils/env.js';
 
 /**
  * Serverless API Endpoint: /api/voice/query
