@@ -2,6 +2,24 @@ import { GoogleGenAI } from '@google/genai';
 import type { ApiRequest, ApiResponse } from './_utils/serverTypes';
 import { getGeminiApiKey, getGeminiModel } from './_utils/env.js';
 
+
+function withTimeout<T>(
+  operation: Promise<T>,
+  timeoutMs: number,
+  label: string
+): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${timeoutMs} ms`));
+    }, timeoutMs);
+  });
+
+  return Promise.race([operation, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
 /**
  * Serverless API Endpoint: /api/chat
  * Handles conversational queries grounded in the user's personal memories & reminders.
@@ -59,14 +77,34 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
     return;
   }
 
-  const cappedHistory = Array.isArray(history) ? history.slice(-10) : [];
-  const cappedMemories = Array.isArray(memories) ? memories.slice(0, 50) : [];
-  const cappedReminders = Array.isArray(reminders) ? reminders.slice(0, 50) : [];
+  const cappedHistory = Array.isArray(history)
+  ? history.slice(-6).map((item: any) => ({
+      role: item?.role,
+      content: typeof item?.content === 'string'
+        ? item.content.slice(0, 2000)
+        : '',
+    }))
+  : [];
 
-  const modelName = getGeminiModel();
+const cappedMemories = Array.isArray(memories)
+  ? memories.slice(0, 25)
+  : [];
+
+const cappedReminders = Array.isArray(reminders)
+  ? reminders.slice(0, 25)
+  : [];
+
+  const modelName = 'gemini-3.5-flash-lite';
+
+  const requestStartedAt = Date.now();
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({
+  apiKey,
+  httpOptions: {
+    timeout: 30000,
+  },
+});
 
     const memoriesText = cappedMemories.length > 0
       ? cappedMemories.map((m: any) => `- [ID: ${m.id}] ${m.title}: ${m.content} (Category: ${m.category || 'General'}, Date: ${m.date || 'None'}, Person: ${m.person || 'None'})`).join('\n')
@@ -148,14 +186,34 @@ ${remindersText}
       parts: [{ text: message }]
     });
 
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents,
-      config: {
-        systemInstruction,
-        responseMimeType: 'application/json',
-      }
-    });
+    
+
+console.info('[Smriti Chat] Gemini request started', {
+  model: modelName,
+  historyCount: cappedHistory.length,
+  memoryCount: cappedMemories.length,
+  reminderCount: cappedReminders.length,
+});
+
+const response = await withTimeout(
+  ai.models.generateContent({
+    model: modelName,
+    contents,
+    config: {
+      systemInstruction,
+      responseMimeType: 'application/json',
+      maxOutputTokens: 1024,
+    },
+  }),
+  25000,
+  'Gemini generation'
+);
+
+console.info('[Smriti Chat] Gemini request completed', {
+  elapsedMs: Date.now() - requestStartedAt,
+  model: modelName,
+});
+
 
     const responseText = response.text || '';
     if (!responseText) {
@@ -217,7 +275,22 @@ ${remindersText}
     });
 
   } catch (error: any) {
-    const errorMessage = error?.message || 'An error occurred while calling the AI model.';
+   const errorMessage =
+  error instanceof Error
+    ? error.message
+    : typeof error === 'string'
+      ? error
+      : JSON.stringify(error) || 'Unknown Gemini error';
+
+    const isTimeout =
+  /timed out|timeout|deadline/i.test(errorMessage);
+
+console.error('[Smriti Chat] Request failed', {
+  elapsedMs: Date.now() - requestStartedAt,
+  message: errorMessage,
+  status: error?.status,
+  code: error?.code,
+});
     const isQuota = errorMessage.includes('429') || /quota|rate/i.test(errorMessage);
     const isAuth = errorMessage.includes('401') || errorMessage.includes('403') || /api key/i.test(errorMessage);
 
@@ -233,6 +306,20 @@ ${remindersText}
     } else {
       userFriendlyError = `API Error: ${errorMessage}`;
     }
+
+    if (isTimeout) {
+  statusCode = 504;
+  userFriendlyError =
+    'Smriti took too long to get an AI response. Please try again.';
+} else if (isAuth) {
+  statusCode = 401;
+  userFriendlyError = 'API Error: Invalid or expired API key.';
+} else if (isQuota) {
+  statusCode = 429;
+  userFriendlyError = 'API Error: Rate limit or quota exceeded.';
+} else {
+  userFriendlyError = 'API Error: Failed to process request.';
+}
 
     res.status(statusCode).json({
       error: userFriendlyError

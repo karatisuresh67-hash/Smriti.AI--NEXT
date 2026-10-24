@@ -29,20 +29,24 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
     return;
   }
 
-  const model = getGeminiModel();
+  const model = 'gemini-3.5-flash-lite';
   const testPrompt = 'Smriti AI connection verification. Reply with: "Smriti AI connection active." and nothing else.';
 
   const startTime = Date.now();
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({
+  apiKey,
+  httpOptions: {
+    timeout: 15000,
+  },
+});
 
     const response = await ai.models.generateContent({
       model,
       contents: testPrompt,
       config: {
-        maxOutputTokens: 800,
-        temperature: 0.2,
+        maxOutputTokens: 64,
       }
     });
 
