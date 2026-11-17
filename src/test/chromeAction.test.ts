@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { chromeActionService, detectWebsiteIntent } from '../services/chromeActionService';
-import { detectChromeWebsiteAction } from '../../api/agent/unifiedEngine';
+import { detectChromeWebsiteAction } from '../../api/_utils/unifiedEngine';
 
 describe('Smriti AI — Chrome-Native Website Actions & Intent Tests', () => {
   beforeEach(() => {

@@ -1,8 +1,13 @@
+
 {
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
+    {
+      "source": "/api/gemini-test",
+      "destination": "/api/health?mode=gemini-test"
+    },
     {
       "source": "/api/(.*)",
       "destination": "/api/$1"
@@ -13,3 +18,4 @@
     }
   ]
 }
+
