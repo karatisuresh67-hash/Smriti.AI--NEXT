@@ -1,5 +1,5 @@
-import type { ApiRequest, ApiResponse, HealthResponse } from './_utils/serverTypes';
-import { getGeminiApiKey, getGeminiModel, isSupabaseConfigured, getAppEnvironment } from './_utils/env';
+import type { ApiRequest, ApiResponse, HealthResponse } from './_utils/serverTypes.js';
+import { getGeminiApiKey, getGeminiModel, isSupabaseConfigured, getAppEnvironment } from './_utils/env.js';
 
 /**
  * Health Check Endpoint (/api/health)

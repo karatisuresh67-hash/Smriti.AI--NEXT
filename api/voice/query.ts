@@ -1,6 +1,6 @@
-import type { ApiRequest, ApiResponse } from '../_utils/serverTypes';
-import { validateAuthToken } from '../_utils/auth';
-import { runUnifiedAgent } from '../agent/unifiedEngine';
+import type { ApiRequest, ApiResponse } from '../_utils/serverTypes.js';
+import { validateAuthToken } from '../_utils/auth.js';
+import { runUnifiedAgent } from '../agent/unifiedEngine.js';
 
 /**
  * Serverless API Endpoint: /api/voice/query

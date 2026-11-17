@@ -1,5 +1,5 @@
 import { GoogleGenAI, Modality } from '@google/genai';
-import type { ApiRequest, ApiResponse } from '../_utils/serverTypes';
+import type { ApiRequest, ApiResponse } from '../_utils/serverTypes.js';
 import { getGeminiApiKey } from '../_utils/env.js';
 
 /**

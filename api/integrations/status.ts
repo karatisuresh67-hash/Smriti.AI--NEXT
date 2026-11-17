@@ -1,4 +1,4 @@
-import type { ApiRequest, ApiResponse } from '../_utils/serverTypes';
+import type { ApiRequest, ApiResponse } from '../_utils/serverTypes.js';
 
 /**
  * Serverless API Endpoint: /api/integrations/status

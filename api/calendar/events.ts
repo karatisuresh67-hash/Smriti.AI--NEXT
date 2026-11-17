@@ -1,5 +1,5 @@
-import type { ApiRequest, ApiResponse } from '../_utils/serverTypes';
-import { validateAuthToken } from '../_utils/auth';
+import type { ApiRequest, ApiResponse } from '../_utils/serverTypes.js';
+import { validateAuthToken } from '../_utils/auth.js';
 
 /**
  * Serverless API Endpoint: /api/calendar/events

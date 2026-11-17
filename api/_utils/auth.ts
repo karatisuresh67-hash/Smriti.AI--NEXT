@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { ApiRequest } from './serverTypes';
+import type { ApiRequest } from './serverTypes.js';
 
 export interface AuthValidationResult {
   authenticated: boolean;

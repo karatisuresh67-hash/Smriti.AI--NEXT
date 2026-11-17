@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
-import type { ApiRequest, ApiResponse, GeminiTestResponse } from './_utils/serverTypes';
-import { getGeminiApiKey, getGeminiModel } from './_utils/env';
+import type { ApiRequest, ApiResponse, GeminiTestResponse } from './_utils/serverTypes.js';
+import { getGeminiApiKey, getGeminiModel } from './_utils/env.js';
 
 /**
  * Gemini Connectivity Test Endpoint (/api/gemini-test)

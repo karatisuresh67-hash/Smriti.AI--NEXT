@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import mammoth from 'mammoth';
-import type { ApiRequest, ApiResponse } from '../_utils/serverTypes';
+import type { ApiRequest, ApiResponse } from '../_utils/serverTypes.js';
 import { getGeminiApiKey, getGeminiModel } from '../_utils/env.js';
 
 /**

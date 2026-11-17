@@ -1,4 +1,4 @@
-import type { ApiRequest, ApiResponse } from '../_utils/serverTypes';
+import type { ApiRequest, ApiResponse } from '../_utils/serverTypes.js';
 import { createClient } from '@supabase/supabase-js';
 
 /**

@@ -1,8 +1,8 @@
 import { chromium } from 'playwright';
 import { GoogleGenAI } from '@google/genai';
-import type { ApiRequest, ApiResponse } from '../_utils/serverTypes';
+import type { ApiRequest, ApiResponse } from '../_utils/serverTypes.js';
 import { getGeminiApiKey, getGeminiModel } from '../_utils/env.js';
-import { validateAuthToken } from '../_utils/auth';
+import { validateAuthToken } from '../_utils/auth.js';
 
 interface AgentStep {
   step: number;
