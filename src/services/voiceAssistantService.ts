@@ -116,7 +116,9 @@ export class VoiceAssistantService {
    */
   public async startSession(
     memories: Memory[],
-    reminders: Reminder[]
+    reminders: Reminder[],
+    tasks: any[] = [],
+    documents: any[] = []
   ): Promise<void> {
     const initialized = await this.initializeAudio();
     if (!initialized) return;
@@ -184,7 +186,12 @@ export class VoiceAssistantService {
    * Conversational Voice Pipeline Fallback:
    * Listens to speech, submits grounded query to /api/voice/query, and speaks the reply.
    */
-  public fallbackToVoicePipeline(memories: Memory[], reminders: Reminder[]) {
+  public fallbackToVoicePipeline(
+    memories: Memory[],
+    reminders: Reminder[],
+    tasks: any[] = [],
+    documents: any[] = []
+  ) {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
@@ -216,7 +223,7 @@ export class VoiceAssistantService {
         });
 
         this.setStatus('thinking');
-        await this.processGroundedQuery(transcript.trim(), memories, reminders);
+        await this.processGroundedQuery(transcript.trim(), memories, reminders, tasks, documents);
       };
 
       this.recognition.onerror = (err: any) => {
@@ -247,7 +254,9 @@ export class VoiceAssistantService {
   public async processGroundedQuery(
     queryText: string,
     memories: Memory[],
-    reminders: Reminder[]
+    reminders: Reminder[],
+    tasks: any[] = [],
+    documents: any[] = []
   ): Promise<void> {
     try {
       const res = await fetch('/api/voice/query', {
@@ -257,6 +266,8 @@ export class VoiceAssistantService {
           query: queryText,
           memories,
           reminders,
+          tasks,
+          documents,
           currentDateTime: new Date().toISOString()
         })
       });

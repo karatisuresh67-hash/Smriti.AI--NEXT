@@ -5,7 +5,9 @@ import {
   RotateCcw, 
   Brain, 
   StopCircle,
-  HelpCircle
+  HelpCircle,
+  Terminal,
+  Bot
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ChatMessage } from '../components/chat/ChatMessage';
@@ -21,7 +23,9 @@ export function ChatPage() {
     setChatMessages, 
     memories, 
     reminders, 
-    settings 
+    tasks,
+    settings,
+    dispatchChromeAction 
   } = useApp();
 
   const [input, setInput] = useState('');
@@ -111,6 +115,7 @@ export function ChatPage() {
         history: historyPayload,
         memories,
         reminders,
+        tasks,
         currentDateTime: new Date().toISOString(),
         userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
       });
@@ -125,6 +130,19 @@ export function ChatPage() {
       };
 
       setChatMessages([...newHistory, assistantMessage]);
+
+      // If action is a Chrome-native website action, automatically dispatch and launch
+      if (response.action && response.action.type === 'chrome_action') {
+        dispatchChromeAction({
+          command: messageText,
+          websiteName: response.action.websiteName,
+          actionType: response.action.actionType,
+          destinationUrl: response.action.destinationUrl,
+          targetTitle: response.action.targetTitle,
+          executionMode: response.action.executionMode,
+          requiresApproval: response.action.requiresApproval,
+        });
+      }
 
       if (settings.voiceResponse && response.reply) {
         handleSpeak(response.reply, assistantMsgId);
@@ -144,7 +162,7 @@ export function ChatPage() {
       {
         id: `welcome-${Date.now()}`,
         role: 'assistant',
-        content: "Chat session restarted. I have your current saved memories and reminders ready. How can I help you?",
+        content: "Chat session restarted. I have your current saved memories, reminders, and tasks ready. How can I assist you?",
         timestamp: new Date().toISOString(),
         action: null,
       }
@@ -153,29 +171,29 @@ export function ChatPage() {
   };
 
   const sampleQuestions = [
-    "When is Rahul's birthday?",
-    "Remind me two days before Rahul's birthday",
-    "What are Professor Sharma's office hours?",
-    "Remember that Suresh's favorite book is Dune",
+    "What tasks do I have scheduled this week?",
+    "Remember that our product launch is on Friday",
+    "Summarize my recent knowledge notes",
+    "Schedule a task to review project roadmap tomorrow at 10 AM",
   ];
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] sm:h-[calc(100vh-120px)] max-w-4xl mx-auto">
+    <div className="flex flex-col h-[calc(100vh-140px)] sm:h-[calc(100vh-120px)] max-w-4xl mx-auto animate-in fade-in duration-200">
       {/* Chat Header Bar */}
-      <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 shadow-soft mb-3">
+      <div className="flex items-center justify-between p-3.5 sm:p-4 bg-[#070C1E] rounded-2xl border border-[#1E2540] shadow-xl mb-3">
         <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-glow">
-            <Brain className="w-5 h-5 text-accent-blue" />
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-400 via-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+            <Bot className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-sm font-bold text-navy-900 flex items-center gap-1.5">
-              Smriti AI Assistant
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-800 border border-violet-200">
-                AI Assistant
+            <h1 className="text-sm font-bold text-white flex items-center gap-1.5">
+              <span>Smriti AI Assistant</span>
+              <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                GEMINI 2.5
               </span>
             </h1>
-            <p className="text-[11px] text-slate-500">
-              Grounded in {memories.length} saved memories & {reminders.length} reminders
+            <p className="text-[11px] text-slate-400">
+              Grounded in {memories.length} memories, {reminders.length} reminders & {tasks.length} tasks
             </p>
           </div>
         </div>
@@ -184,7 +202,7 @@ export function ChatPage() {
           {isSpeaking && (
             <button
               onClick={handleStopSpeak}
-              className="flex items-center space-x-1 px-2.5 py-1 text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 rounded-lg hover:bg-rose-100 transition-colors"
+              className="flex items-center space-x-1 px-2.5 py-1 text-xs font-semibold bg-rose-500/10 text-rose-300 border border-rose-500/30 rounded-lg hover:bg-rose-500/20 transition-colors"
             >
               <StopCircle className="w-3.5 h-3.5" />
               <span>Stop Audio</span>
@@ -193,7 +211,7 @@ export function ChatPage() {
 
           <button
             onClick={handleClearHistory}
-            className="p-2 text-slate-400 hover:text-navy-900 hover:bg-slate-100 rounded-xl transition-colors"
+            className="p-2 text-slate-400 hover:text-white hover:bg-[#151D36] rounded-xl transition-colors border border-transparent hover:border-[#1E2540]"
             title="Reset conversation"
             aria-label="Reset conversation"
           >
@@ -203,7 +221,7 @@ export function ChatPage() {
       </div>
 
       {/* Messages Scroll View */}
-      <div className="flex-1 overflow-y-auto px-1 sm:px-3 py-2 space-y-2">
+      <div className="flex-1 overflow-y-auto px-1 sm:px-3 py-2 space-y-3">
         {chatMessages.map((msg) => (
           <ChatMessage
             key={msg.id}
@@ -217,26 +235,26 @@ export function ChatPage() {
 
         {isLoading && (
           <div className="flex items-start space-x-3 mb-4 animate-in fade-in">
-            <div className="w-8 h-8 rounded-xl bg-violet-600 text-white flex items-center justify-center shadow-sm">
-              <Brain className="w-4 h-4 text-accent-blue animate-pulse" />
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 text-white flex items-center justify-center shadow-md">
+              <Bot className="w-4 h-4 text-white animate-pulse" />
             </div>
-            <div className="bg-white border border-slate-100 px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm">
+            <div className="bg-[#0B1024] border border-[#1E2540] px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm">
               <div className="flex items-center space-x-2">
-                <span className="w-2 h-2 rounded-full bg-violet-400 animate-bounce" />
-                <span className="w-2 h-2 rounded-full bg-violet-500 animate-bounce [animation-delay:0.2s]" />
-                <span className="w-2 h-2 rounded-full bg-violet-600 animate-bounce [animation-delay:0.4s]" />
-                <span className="text-xs text-slate-400 ml-2 font-medium">Smriti is thinking...</span>
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-bounce" />
+                <span className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce [animation-delay:0.2s]" />
+                <span className="w-2 h-2 rounded-full bg-violet-500 animate-bounce [animation-delay:0.4s]" />
+                <span className="text-xs text-slate-400 ml-2 font-medium">Smriti AI is reasoning...</span>
               </div>
             </div>
           </div>
         )}
 
         {apiError && (
-          <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs my-2 flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs my-2 flex items-center justify-between">
             <span>{apiError}</span>
             <button
               onClick={() => setApiError(null)}
-              className="text-xs font-bold text-rose-700 underline ml-2"
+              className="text-xs font-bold text-rose-400 underline ml-2"
             >
               Dismiss
             </button>
@@ -249,16 +267,16 @@ export function ChatPage() {
       {/* Suggested Prompts if only welcome message exists */}
       {chatMessages.length <= 1 && (
         <div className="px-3 py-2 mb-2">
-          <div className="flex items-center space-x-1.5 text-xs text-slate-500 font-semibold mb-2">
-            <HelpCircle className="w-3.5 h-3.5 text-violet-500" />
-            <span>Suggested questions:</span>
+          <div className="flex items-center space-x-1.5 text-xs text-slate-400 font-semibold mb-2">
+            <HelpCircle className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Suggested directives:</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {sampleQuestions.map((q, idx) => (
               <button
                 key={idx}
                 onClick={() => handleSendMessage(q)}
-                className="text-xs px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-violet-300 hover:bg-violet-50/50 text-slate-700 transition-colors shadow-sm"
+                className="text-xs px-3 py-1.5 rounded-xl bg-[#070C1E] border border-[#1E2540] hover:border-cyan-500/40 hover:bg-[#0E1530] text-slate-300 transition-colors"
               >
                 "{q}"
               </button>
@@ -275,7 +293,7 @@ export function ChatPage() {
       />
 
       {/* Input Bar */}
-      <div className="p-3 bg-white border border-slate-200/80 rounded-2xl shadow-soft">
+      <div className="p-3 bg-[#070C1E] border border-[#1E2540] rounded-2xl shadow-xl">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -298,13 +316,13 @@ export function ChatPage() {
             onChange={(e) => setInput(e.target.value)}
             placeholder={isListening ? "Listening to your voice..." : "Ask Smriti anything or tell her what to remember..."}
             disabled={isLoading}
-            className="flex-1 px-3.5 py-2.5 text-sm bg-slate-50 rounded-xl border border-transparent focus:border-violet-500 focus:bg-white focus:outline-none transition-all placeholder:text-slate-400"
+            className="flex-1 px-3.5 py-2.5 text-sm bg-[#0B1024] rounded-xl border border-[#1E2540] text-white focus:border-cyan-500 focus:outline-none transition-all placeholder:text-slate-500"
           />
 
           <button
             type="submit"
             disabled={!input.trim() || isLoading}
-            className="p-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-40 text-white rounded-xl shadow-sm transition-all active:scale-95"
+            className="p-2.5 bg-gradient-to-r from-cyan-500 via-indigo-600 to-violet-600 hover:from-cyan-400 hover:to-violet-500 disabled:opacity-40 text-white rounded-xl shadow-md transition-all active:scale-95"
             aria-label="Send message"
           >
             <Send className="w-4 h-4" />

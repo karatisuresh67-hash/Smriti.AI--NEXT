@@ -1,6 +1,13 @@
 import type { 
   Memory, 
   Reminder, 
+  Task,
+  TaskPriority,
+  TaskStatus,
+  IntegrationItem,
+  IntegrationProvider,
+  AutomationExecution,
+  DocumentItem,
   UserSettings, 
   ActivityItem, 
   ActivityType,
@@ -14,16 +21,16 @@ import type { User } from '@supabase/supabase-js';
 const STORAGE_KEYS = {
   MEMORIES: 'smriti_memories_v2',
   REMINDERS: 'smriti_reminders_v2',
+  TASKS: 'smriti_tasks_v2',
+  INTEGRATIONS: 'smriti_integrations_v2',
+  AUTOMATIONS: 'smriti_automations_v2',
+  DOCUMENTS: 'smriti_documents_v2',
   SETTINGS: 'smriti_settings_v2',
   ACTIVITIES: 'smriti_activities_v2',
   INITIALIZED: 'smriti_initialized_v2',
   MIGRATED_PREFIX: 'smriti_migrated_',
 };
 
-/**
- * Database schema row interfaces matching public.memories, public.reminders, public.activities
- * in docs/supabase-schema.sql exactly.
- */
 export interface DbMemoryRow {
   id: string;
   user_id: string;
@@ -55,6 +62,50 @@ export interface DbReminderRow {
   updated_at: string;
 }
 
+export interface DbTaskRow {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  due_date: string | null;
+  due_time: string | null;
+  priority: string | null;
+  status: string | null;
+  category: string | null;
+  linked_reminder_id: string | null;
+  source: string | null;
+  is_demo: boolean | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbIntegrationRow {
+  id: string;
+  user_id: string;
+  provider: string;
+  account_email: string | null;
+  account_name: string | null;
+  is_connected: boolean;
+  scopes: any;
+  settings: any;
+  last_synced_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbAutomationRow {
+  id: string;
+  user_id: string;
+  workflow_id: string;
+  workflow_name: string;
+  trigger_source: string;
+  status: string;
+  input_payload: any;
+  output_payload: any;
+  error_message: string | null;
+  started_at: string;
+  completed_at: string | null;
+}
 
 export interface DbActivityRow {
   id: string;
@@ -66,11 +117,12 @@ export interface DbActivityRow {
   created_at: string;
 }
 
-
-function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+function generateId(prefix: string): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 }
-
 
 // Model transformation helpers
 function rowToMemory(row: DbMemoryRow | any): Memory {
@@ -94,11 +146,7 @@ function memoryToRow(
 ): DbMemoryRow {
   const now = new Date().toISOString();
   return {
-    
-    id: data.id && isUuid(data.id)
-      ? data.id
-      : crypto.randomUUID(),
-
+    id: data.id || generateId('mem'),
     user_id: userId,
     title: data.title.trim(),
     content: (data.content || data.title).trim(),
@@ -141,11 +189,7 @@ function reminderToRow(
 ): DbReminderRow {
   const now = new Date().toISOString();
   return {
-   
-    id: data.id && isUuid(data.id)
-      ? data.id
-      : crypto.randomUUID(),
-
+    id: data.id || generateId('rem'),
     user_id: userId,
     title: data.title.trim(),
     description: data.description && data.description.trim() ? data.description.trim() : null,
@@ -163,6 +207,84 @@ function reminderToRow(
   };
 }
 
+function rowToTask(row: DbTaskRow | any): Task {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    title: row.title || '',
+    description: row.description || '',
+    dueDate: row.due_date || '',
+    dueTime: row.due_time || '',
+    priority: (row.priority as TaskPriority) || 'Medium',
+    status: (row.status as TaskStatus) || 'pending',
+    category: row.category || 'General',
+    linkedReminderId: row.linked_reminder_id || null,
+    source: row.source || 'manual',
+    isDemo: Boolean(row.is_demo),
+    createdAt: row.created_at || new Date().toISOString(),
+    updatedAt: row.updated_at || new Date().toISOString(),
+  };
+}
+
+function taskToRow(
+  data: Omit<Task, 'id' | 'createdAt' | 'updatedAt'> & { id?: string; isDemo?: boolean },
+  userId: string
+): DbTaskRow {
+  const now = new Date().toISOString();
+  return {
+    id: data.id || generateId('task'),
+    user_id: userId,
+    title: data.title.trim(),
+    description: data.description ? data.description.trim() : null,
+    due_date: data.dueDate || null,
+    due_time: data.dueTime || null,
+    priority: data.priority || 'Medium',
+    status: data.status || 'pending',
+    category: data.category || 'General',
+    linked_reminder_id: data.linkedReminderId || null,
+    source: data.source || 'manual',
+    is_demo: Boolean(data.isDemo),
+    created_at: now,
+    updated_at: now,
+  };
+}
+
+function rowToIntegration(row: DbIntegrationRow | any): IntegrationItem {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    provider: row.provider as IntegrationProvider,
+    accountEmail: row.account_email || null,
+    accountName: row.account_name || null,
+    isConnected: Boolean(row.is_connected),
+    scopes: Array.isArray(row.scopes) ? row.scopes : [],
+    settings: row.settings || {},
+    lastSyncedAt: row.last_synced_at || null,
+    createdAt: row.created_at || new Date().toISOString(),
+    updatedAt: row.updated_at || new Date().toISOString(),
+  };
+}
+
+function rowToAutomation(row: DbAutomationRow | any): AutomationExecution {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    taskTitle: row.workflow_name || 'Agent Action',
+    instruction: row.workflow_name || 'Autonomous execution',
+    targetSystem: 'System',
+    steps: [],
+    workflowId: row.workflow_id,
+    workflowName: row.workflow_name,
+    triggerSource: row.trigger_source || 'chat',
+    status: row.status || 'completed',
+    inputPayload: row.input_payload || null,
+    outputPayload: row.output_payload || null,
+    errorMessage: row.error_message || null,
+    startedAt: row.started_at || new Date().toISOString(),
+    completedAt: row.completed_at || null,
+  };
+}
+
 function rowToActivity(row: DbActivityRow | any): ActivityItem {
   return {
     id: row.id,
@@ -175,119 +297,17 @@ function rowToActivity(row: DbActivityRow | any): ActivityItem {
   };
 }
 
-const getDemoMemories = (): Memory[] => {
-  const currentYear = new Date().getFullYear();
-  return [
-    {
-      id: 'demo-mem-1',
-      title: "Rahul's Birthday",
-      content: "Rahul's birthday is November 15. He loves reading science fiction novels and drinking double espresso.",
-      category: "Birthday",
-      date: `${currentYear}-11-15`,
-      person: "Rahul",
-      isDemo: true,
-      createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-      updatedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-    },
-    {
-      id: 'demo-mem-2',
-      title: "Prof. Sharma's Office Hours",
-      content: "Professor Sharma has walk-in office hours in Building B, Room 402 on Tuesdays & Thursdays from 2:00 PM to 4:00 PM.",
-      category: "Important Event",
-      date: "",
-      person: "Prof. Sharma",
-      isDemo: true,
-      createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-      updatedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-    },
-    {
-      id: 'demo-mem-3',
-      title: "Personal Coffee Order",
-      content: "Oat milk flat white with cinnamon on top, strictly unsweetened.",
-      category: "Preference",
-      date: "",
-      person: "Me",
-      isDemo: true,
-      createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-      updatedAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-    },
-    {
-      id: 'demo-mem-4',
-      title: "Quarterly Learning Goal",
-      content: "Complete personal AI memory assistant project setup and prepare live demonstration.",
-      category: "Personal Goal",
-      date: `${currentYear}-10-10`,
-      person: "Suresh",
-      isDemo: true,
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-      updatedAt: new Date(Date.now() - 86400000).toISOString(),
-    }
-  ];
-};
+const getDemoTasks = (): Task[] => [];
 
-const getDemoReminders = (): Reminder[] => {
-  const today = new Date();
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const formatYMD = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const getDemoIntegrations = (): IntegrationItem[] => [];
 
-  const todayStr = formatYMD(today);
-
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = formatYMD(tomorrow);
-
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = formatYMD(yesterday);
-
-  return [
-    {
-      id: 'demo-rem-1',
-      title: "Call Professor Sharma regarding thesis",
-      description: "Discuss draft chapter feedback and scheduling follow-up consultation.",
-      date: tomorrowStr,
-      time: "09:00",
-      category: "Academic",
-      priority: "High",
-      status: "upcoming",
-      linkedMemoryId: "demo-mem-2",
-      isDemo: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: 'demo-rem-2',
-      title: "Project Milestone Review",
-      description: "Final walkthrough and feature demonstration prep.",
-      date: todayStr,
-      time: "17:00",
-      category: "Project",
-      priority: "High",
-      status: "upcoming",
-      isDemo: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: 'demo-rem-3',
-      title: "Submit Lab Progress Report",
-      description: "Send compiled progress notes to academic advisor.",
-      date: yesterdayStr,
-      time: "14:00",
-      category: "Academic",
-      priority: "Medium",
-      status: "overdue",
-      isDemo: true,
-      createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-      updatedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-    }
-  ];
-};
+const getDemoAutomations = (): AutomationExecution[] => [];
 
 const defaultSettings: UserSettings = {
   displayName: '',
   voiceResponse: true,
   notificationsEnabled: false,
+  darkMode: true,
 };
 
 class StorageService {
@@ -295,10 +315,6 @@ class StorageService {
     return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
   }
 
-  /**
-   * Retrieves the currently authenticated Supabase user.
-   * Validates authentication state securely with Supabase Auth.
-   */
   public async getCurrentUser(): Promise<User | null> {
     if (!supabase || !isSupabaseConfigured) return null;
     try {
@@ -318,29 +334,19 @@ class StorageService {
 
     if (!localStorage.getItem(STORAGE_KEYS.INITIALIZED)) {
       this.resetToDemo();
-    } else {
-      this.recalculateOverdueStatuses();
     }
   }
 
   // ============================================================================
-  // MEMORY CRUD (Connected to public.memories with RLS enforcement)
+  // MEMORIES CRUD
   // ============================================================================
 
-  /**
-   * Reads memories for the authenticated user from public.memories.
-   * Automatically enforces Row Level Security (auth.uid() = user_id).
-   * Falls back to local cached storage on network failure.
-   */
   public async getMemories(passedUserId?: string): Promise<Memory[]> {
     const user = await this.getCurrentUser();
     const activeUserId = user?.id || passedUserId;
 
     if (activeUserId && supabase && isSupabaseConfigured) {
       try {
-        // Run one-time migration for legacy non-demo local memories if any
-        await this.syncLocalDataToSupabase(activeUserId);
-
         const { data, error } = await supabase
           .from('memories')
           .select('*')
@@ -356,19 +362,13 @@ class StorageService {
         this.cacheUserMemories(activeUserId, list);
         return list;
       } catch (err) {
-        console.warn('[StorageService] Network failure loading memories, using cache:', err);
         return this.getLocalMemories(activeUserId);
       }
     }
 
-    // Guest mode / unauthenticated local storage
     return this.getLocalMemories();
   }
 
-  /**
-   * Inserts a new memory into public.memories.
-   * Strictly uses the authenticated user's ID as user_id. Never trusts client input.
-   */
   public async saveMemory(
     memoryData: Omit<Memory, 'id' | 'createdAt' | 'updatedAt'>,
     _untrustedUserId?: string
@@ -376,7 +376,7 @@ class StorageService {
     const user = await this.getCurrentUser();
 
     if (user && supabase && isSupabaseConfigured) {
-      const verifiedUserId = user.id; // Strictly from authenticated Supabase session
+      const verifiedUserId = user.id;
       const row = memoryToRow(memoryData, verifiedUserId);
 
       const { data, error } = await supabase
@@ -385,95 +385,50 @@ class StorageService {
         .select()
         .single();
 
-      if (error) {
-        console.error('[StorageService] Failed to insert memory into Supabase:', error);
-        throw new Error(error.message || 'Failed to save memory to Supabase');
-      }
+      if (error) throw new Error(error.message);
 
       const createdMemory = rowToMemory(data);
       const cached = this.getLocalMemories(verifiedUserId);
-      this.cacheUserMemories(
-        verifiedUserId,
-        [createdMemory, ...cached.filter(m => m.id !== createdMemory.id)]
-      );
-
-      await this.logActivity(
-        'create_memory',
-        createdMemory.title,
-        createdMemory.category,
-        undefined,
-        verifiedUserId
-      );
-
+      this.cacheUserMemories(verifiedUserId, [createdMemory, ...cached.filter(m => m.id !== createdMemory.id)]);
+      await this.logActivity('create_memory', createdMemory.title, createdMemory.category, undefined, verifiedUserId);
       return createdMemory;
     }
 
-    // Fallback for guest mode / local storage
     return this.saveLocalMemory(memoryData);
   }
 
-  /**
-   * Updates an existing memory in public.memories.
-   * Scoped to the authenticated user's ID and enforced by Supabase RLS.
-   */
-  public async updateMemory(
-    id: string,
-    updates: Partial<Memory>,
-    _untrustedUserId?: string
-  ): Promise<Memory> {
+  public async updateMemory(id: string, updates: Partial<Memory>, _untrustedUserId?: string): Promise<Memory> {
     const user = await this.getCurrentUser();
 
     if (user && supabase && isSupabaseConfigured) {
       const verifiedUserId = user.id;
-      const now = new Date().toISOString();
-
-      const dbUpdates: Record<string, any> = {
-        updated_at: now,
-      };
+      const dbUpdates: Record<string, any> = { updated_at: new Date().toISOString() };
       if (updates.title !== undefined) dbUpdates.title = updates.title.trim();
       if (updates.content !== undefined) dbUpdates.content = updates.content.trim();
       if (updates.category !== undefined) dbUpdates.category = updates.category;
       if (updates.date !== undefined) dbUpdates.date = updates.date ? updates.date : null;
-      if (updates.person !== undefined) dbUpdates.person = updates.person && updates.person.trim() ? updates.person.trim() : null;
+      if (updates.person !== undefined) dbUpdates.person = updates.person ? updates.person.trim() : null;
 
       const { data, error } = await supabase
         .from('memories')
         .update(dbUpdates)
         .eq('id', id)
-        .eq('user_id', verifiedUserId) // Defense-in-depth on top of database RLS
+        .eq('user_id', verifiedUserId)
         .select()
         .single();
 
-      if (error) {
-        console.error('[StorageService] Failed to update memory in Supabase:', error);
-        throw new Error(error.message || 'Failed to update memory in Supabase');
-      }
+      if (error) throw new Error(error.message);
 
-      const updatedMemory = rowToMemory(data);
+      const updated = rowToMemory(data);
       const cached = this.getLocalMemories(verifiedUserId);
-      this.cacheUserMemories(
-        verifiedUserId,
-        cached.map(m => m.id === id ? updatedMemory : m)
-      );
-
-      await this.logActivity(
-        'update_memory',
-        updatedMemory.title,
-        updatedMemory.category,
-        undefined,
-        verifiedUserId
-      );
-
-      return updatedMemory;
+      this.cacheUserMemories(verifiedUserId, cached.map(m => m.id === id ? updated : m));
+      await this.logActivity('update_memory', updated.title, updated.category, undefined, verifiedUserId);
+      return updated;
     }
 
     return this.updateLocalMemory(id, updates);
   }
 
-  /**
-   * Deletes a memory from public.memories.
-   * Scoped to the authenticated user's ID and protected by Supabase RLS.
-   */
   public async deleteMemory(id: string, _untrustedUserId?: string): Promise<void> {
     const user = await this.getCurrentUser();
 
@@ -482,26 +437,12 @@ class StorageService {
       const cached = this.getLocalMemories(verifiedUserId);
       const existing = cached.find(m => m.id === id);
 
-      const { error } = await supabase
-        .from('memories')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', verifiedUserId); // Enforce owner matching + RLS
-
-      if (error) {
-        console.error('[StorageService] Failed to delete memory from Supabase:', error);
-        throw new Error(error.message || 'Failed to delete memory from Supabase');
-      }
+      const { error } = await supabase.from('memories').delete().eq('id', id).eq('user_id', verifiedUserId);
+      if (error) throw new Error(error.message);
 
       this.cacheUserMemories(verifiedUserId, cached.filter(m => m.id !== id));
       if (existing) {
-        await this.logActivity(
-          'delete_memory',
-          existing.title,
-          existing.category,
-          undefined,
-          verifiedUserId
-        );
+        await this.logActivity('delete_memory', existing.title, existing.category, undefined, verifiedUserId);
       }
       return;
     }
@@ -510,13 +451,9 @@ class StorageService {
   }
 
   // ============================================================================
-  // REMINDER CRUD (Connected to public.reminders with RLS enforcement)
+  // REMINDERS CRUD
   // ============================================================================
 
-  /**
-   * Reads reminders for the authenticated user from public.reminders.
-   * Enforced by database RLS policies.
-   */
   public async getReminders(passedUserId?: string): Promise<Reminder[]> {
     const user = await this.getCurrentUser();
     const activeUserId = user?.id || passedUserId;
@@ -529,16 +466,12 @@ class StorageService {
           .eq('user_id', activeUserId)
           .order('created_at', { ascending: false });
 
-        if (error) {
-          console.warn('[StorageService] Error loading reminders from Supabase:', error.message);
-          return this.checkOverdueList(this.getLocalReminders(activeUserId));
-        }
+        if (error) return this.checkOverdueList(this.getLocalReminders(activeUserId));
 
         const list = this.checkOverdueList((data || []).map(rowToReminder));
         this.cacheUserReminders(activeUserId, list);
         return list;
-      } catch (err) {
-        console.warn('[StorageService] Network failure loading reminders, using cache:', err);
+      } catch {
         return this.checkOverdueList(this.getLocalReminders(activeUserId));
       }
     }
@@ -546,10 +479,6 @@ class StorageService {
     return this.checkOverdueList(this.getLocalReminders());
   }
 
-  /**
-   * Inserts a new reminder into public.reminders.
-   * Strictly assigns user_id from the verified authenticated session.
-   */
   public async saveReminder(
     reminderData: Omit<Reminder, 'id' | 'createdAt' | 'updatedAt' | 'status'> & { status?: Reminder['status'] },
     _untrustedUserId?: string
@@ -560,60 +489,27 @@ class StorageService {
       const verifiedUserId = user.id;
       const row = reminderToRow(reminderData, verifiedUserId);
 
-      const { data, error } = await supabase
-        .from('reminders')
-        .insert(row)
-        .select()
-        .single();
+      const { data, error } = await supabase.from('reminders').insert(row).select().single();
+      if (error) throw new Error(error.message);
 
-      if (error) {
-        console.error('[StorageService] Failed to insert reminder into Supabase:', error);
-        throw new Error(error.message || 'Failed to save reminder to Supabase');
-      }
-
-      const createdReminder = rowToReminder(data);
+      const created = rowToReminder(data);
       const cached = this.getLocalReminders(verifiedUserId);
-      this.cacheUserReminders(
-        verifiedUserId,
-        [createdReminder, ...cached.filter(r => r.id !== createdReminder.id)]
-      );
-
-      await this.logActivity(
-        'create_reminder',
-        createdReminder.title,
-        createdReminder.category,
-        undefined,
-        verifiedUserId
-      );
-
-      return createdReminder;
+      this.cacheUserReminders(verifiedUserId, [created, ...cached.filter(r => r.id !== created.id)]);
+      await this.logActivity('create_reminder', created.title, created.category, undefined, verifiedUserId);
+      return created;
     }
 
     return this.saveLocalReminder(reminderData);
   }
 
-  /**
-   * Updates an existing reminder in public.reminders.
-   * Matches the exact columns: title, description, date, time, category, priority, status, linked_memory_id, recurrence, snooze_until.
-   */
-  public async updateReminder(
-    id: string,
-    updates: Partial<Reminder>,
-    _untrustedUserId?: string
-  ): Promise<Reminder> {
+  public async updateReminder(id: string, updates: Partial<Reminder>, _untrustedUserId?: string): Promise<Reminder> {
     const user = await this.getCurrentUser();
 
     if (user && supabase && isSupabaseConfigured) {
       const verifiedUserId = user.id;
-      const now = new Date().toISOString();
-
-      const dbUpdates: Record<string, any> = {
-        updated_at: now,
-      };
+      const dbUpdates: Record<string, any> = { updated_at: new Date().toISOString() };
       if (updates.title !== undefined) dbUpdates.title = updates.title.trim();
-      if (updates.description !== undefined) {
-        dbUpdates.description = updates.description && updates.description.trim() ? updates.description.trim() : null;
-      }
+      if (updates.description !== undefined) dbUpdates.description = updates.description?.trim() || null;
       if (updates.date !== undefined) dbUpdates.date = updates.date;
       if (updates.time !== undefined) dbUpdates.time = updates.time || null;
       if (updates.category !== undefined) dbUpdates.category = updates.category;
@@ -631,40 +527,19 @@ class StorageService {
         .select()
         .single();
 
-      if (error) {
-        console.error('[StorageService] Failed to update reminder in Supabase:', error);
-        throw new Error(error.message || 'Failed to update reminder in Supabase');
-      }
+      if (error) throw new Error(error.message);
 
-      const updatedReminder = rowToReminder(data);
+      const updated = rowToReminder(data);
       const cached = this.getLocalReminders(verifiedUserId);
-      this.cacheUserReminders(
-        verifiedUserId,
-        cached.map(r => r.id === id ? updatedReminder : r)
-      );
-
-      await this.logActivity(
-        'update_reminder',
-        updatedReminder.title,
-        updatedReminder.category,
-        undefined,
-        verifiedUserId
-      );
-
-      return updatedReminder;
+      this.cacheUserReminders(verifiedUserId, cached.map(r => r.id === id ? updated : r));
+      await this.logActivity('update_reminder', updated.title, updated.category, undefined, verifiedUserId);
+      return updated;
     }
 
     return this.updateLocalReminder(id, updates);
   }
 
-  /**
-   * Toggles reminder completion status.
-   */
-  public async toggleReminderStatus(
-    id: string,
-    currentStatus?: ReminderStatus,
-    _untrustedUserId?: string
-  ): Promise<Reminder> {
+  public async toggleReminderStatus(id: string, currentStatus?: ReminderStatus, _untrustedUserId?: string): Promise<Reminder> {
     let status = currentStatus;
     if (!status) {
       const user = await this.getCurrentUser();
@@ -677,10 +552,6 @@ class StorageService {
     return this.updateReminder(id, { status: nextStatus }, _untrustedUserId);
   }
 
-  /**
-   * Deletes a reminder from public.reminders.
-   * Scoped to the authenticated user's ID and enforced by RLS.
-   */
   public async deleteReminder(id: string, _untrustedUserId?: string): Promise<void> {
     const user = await this.getCurrentUser();
 
@@ -689,26 +560,12 @@ class StorageService {
       const cached = this.getLocalReminders(verifiedUserId);
       const existing = cached.find(r => r.id === id);
 
-      const { error } = await supabase
-        .from('reminders')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', verifiedUserId);
-
-      if (error) {
-        console.error('[StorageService] Failed to delete reminder from Supabase:', error);
-        throw new Error(error.message || 'Failed to delete reminder from Supabase');
-      }
+      const { error } = await supabase.from('reminders').delete().eq('id', id).eq('user_id', verifiedUserId);
+      if (error) throw new Error(error.message);
 
       this.cacheUserReminders(verifiedUserId, cached.filter(r => r.id !== id));
       if (existing) {
-        await this.logActivity(
-          'delete_reminder',
-          existing.title,
-          existing.category,
-          undefined,
-          verifiedUserId
-        );
+        await this.logActivity('delete_reminder', existing.title, existing.category, undefined, verifiedUserId);
       }
       return;
     }
@@ -717,7 +574,393 @@ class StorageService {
   }
 
   // ============================================================================
-  // ACTIVITIES (Audit Trail connected to public.activities)
+  // TASKS CRUD (Unified task management connected to public.tasks)
+  // ============================================================================
+
+  public async getTasks(passedUserId?: string): Promise<Task[]> {
+    const user = await this.getCurrentUser();
+    const activeUserId = user?.id || passedUserId;
+
+    if (activeUserId && supabase && isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('user_id', activeUserId)
+          .order('due_date', { ascending: true });
+
+        if (error) {
+          return this.getLocalTasks(activeUserId);
+        }
+
+        const list = (data || []).map(rowToTask);
+        this.cacheUserTasks(activeUserId, list);
+        return list;
+      } catch {
+        return this.getLocalTasks(activeUserId);
+      }
+    }
+
+    return this.getLocalTasks();
+  }
+
+  public async saveTask(
+    taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>,
+    _untrustedUserId?: string
+  ): Promise<Task> {
+    const user = await this.getCurrentUser();
+
+    if (user && supabase && isSupabaseConfigured) {
+      const verifiedUserId = user.id;
+      const row = taskToRow(taskData, verifiedUserId);
+
+      const { data, error } = await supabase.from('tasks').insert(row).select().single();
+      if (error) throw new Error(error.message);
+
+      const created = rowToTask(data);
+      const cached = this.getLocalTasks(verifiedUserId);
+      this.cacheUserTasks(verifiedUserId, [created, ...cached.filter(t => t.id !== created.id)]);
+      await this.logActivity('create_task', created.title, created.category, undefined, verifiedUserId);
+      return created;
+    }
+
+    return this.saveLocalTask(taskData);
+  }
+
+  public async updateTask(id: string, updates: Partial<Task>, _untrustedUserId?: string): Promise<Task> {
+    const user = await this.getCurrentUser();
+
+    if (user && supabase && isSupabaseConfigured) {
+      const verifiedUserId = user.id;
+      const dbUpdates: Record<string, any> = { updated_at: new Date().toISOString() };
+      if (updates.title !== undefined) dbUpdates.title = updates.title.trim();
+      if (updates.description !== undefined) dbUpdates.description = updates.description ? updates.description.trim() : null;
+      if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate || null;
+      if (updates.dueTime !== undefined) dbUpdates.due_time = updates.dueTime || null;
+      if (updates.priority !== undefined) dbUpdates.priority = updates.priority;
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if (updates.category !== undefined) dbUpdates.category = updates.category;
+
+      const { data, error } = await supabase
+        .from('tasks')
+        .update(dbUpdates)
+        .eq('id', id)
+        .eq('user_id', verifiedUserId)
+        .select()
+        .single();
+
+      if (error) throw new Error(error.message);
+
+      const updated = rowToTask(data);
+      const cached = this.getLocalTasks(verifiedUserId);
+      this.cacheUserTasks(verifiedUserId, cached.map(t => t.id === id ? updated : t));
+      await this.logActivity('update_task', updated.title, updated.category, undefined, verifiedUserId);
+      return updated;
+    }
+
+    return this.updateLocalTask(id, updates);
+  }
+
+  public async toggleTaskStatus(id: string, currentStatus?: TaskStatus, _untrustedUserId?: string): Promise<Task> {
+    let status = currentStatus;
+    if (!status) {
+      const user = await this.getCurrentUser();
+      const cached = this.getLocalTasks(user?.id);
+      const target = cached.find(t => t.id === id);
+      status = target?.status;
+    }
+
+    const nextStatus: TaskStatus = status === 'completed' ? 'pending' : 'completed';
+    return this.updateTask(id, { status: nextStatus }, _untrustedUserId);
+  }
+
+  public async deleteTask(id: string, _untrustedUserId?: string): Promise<void> {
+    const user = await this.getCurrentUser();
+
+    if (user && supabase && isSupabaseConfigured) {
+      const verifiedUserId = user.id;
+      const cached = this.getLocalTasks(verifiedUserId);
+      const existing = cached.find(t => t.id === id);
+
+      const { error } = await supabase.from('tasks').delete().eq('id', id).eq('user_id', verifiedUserId);
+      if (error) throw new Error(error.message);
+
+      this.cacheUserTasks(verifiedUserId, cached.filter(t => t.id !== id));
+      if (existing) {
+        await this.logActivity('delete_task', existing.title, existing.category, undefined, verifiedUserId);
+      }
+      return;
+    }
+
+    this.deleteLocalTask(id);
+  }
+
+  // ============================================================================
+  // INTEGRATIONS (Connected Services Management)
+  // ============================================================================
+
+  public async getIntegrations(passedUserId?: string): Promise<IntegrationItem[]> {
+    const user = await this.getCurrentUser();
+    const activeUserId = user?.id || passedUserId;
+
+    if (activeUserId && supabase && isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from('integrations')
+          .select('*')
+          .eq('user_id', activeUserId);
+
+        if (error || !data || data.length === 0) {
+          return this.getLocalIntegrations(activeUserId);
+        }
+
+        const list = data.map(rowToIntegration);
+        this.cacheUserIntegrations(activeUserId, list);
+        return list;
+      } catch {
+        return this.getLocalIntegrations(activeUserId);
+      }
+    }
+
+    return this.getLocalIntegrations();
+  }
+
+  public async updateIntegration(
+    provider: IntegrationProvider,
+    updates: Partial<IntegrationItem>,
+    _untrustedUserId?: string
+  ): Promise<IntegrationItem> {
+    const user = await this.getCurrentUser();
+
+    if (user && supabase && isSupabaseConfigured) {
+      const verifiedUserId = user.id;
+      const now = new Date().toISOString();
+
+      const { data, error } = await supabase
+        .from('integrations')
+        .upsert({
+          id: `int-${verifiedUserId}-${provider}`,
+          user_id: verifiedUserId,
+          provider,
+          account_email: updates.accountEmail || null,
+          account_name: updates.accountName || null,
+          is_connected: updates.isConnected ?? false,
+          scopes: updates.scopes || [],
+          settings: updates.settings || {},
+          last_synced_at: updates.lastSyncedAt || now,
+          updated_at: now,
+        })
+        .select()
+        .single();
+
+      if (error) throw new Error(error.message);
+
+      const updated = rowToIntegration(data);
+      const cached = this.getLocalIntegrations(verifiedUserId);
+      this.cacheUserIntegrations(
+        verifiedUserId,
+        cached.map(i => i.provider === provider ? updated : i)
+      );
+      return updated;
+    }
+
+    // Local fallback
+    const list = this.getLocalIntegrations();
+    const index = list.findIndex(i => i.provider === provider);
+    const updated: IntegrationItem = index !== -1
+      ? { ...list[index], ...updates, updatedAt: new Date().toISOString() }
+      : {
+          id: `int-${provider}`,
+          provider,
+          accountEmail: updates.accountEmail || null,
+          accountName: updates.accountName || null,
+          isConnected: updates.isConnected ?? false,
+          scopes: updates.scopes || [],
+          settings: updates.settings || {},
+          lastSyncedAt: updates.lastSyncedAt || new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+    if (index !== -1) list[index] = updated;
+    else list.push(updated);
+
+    this.saveToStorage(STORAGE_KEYS.INTEGRATIONS, list);
+    return updated;
+  }
+
+  // ============================================================================
+  // AUTOMATION EXECUTIONS (n8n & Agent History)
+  // ============================================================================
+
+  public async getAutomations(passedUserId?: string): Promise<AutomationExecution[]> {
+    const user = await this.getCurrentUser();
+    const activeUserId = user?.id || passedUserId;
+
+    if (activeUserId && supabase && isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from('automation_executions')
+          .select('*')
+          .eq('user_id', activeUserId)
+          .order('started_at', { ascending: false })
+          .limit(50);
+
+        if (error || !data) {
+          return this.getLocalAutomations(activeUserId);
+        }
+
+        const list = data.map(rowToAutomation);
+        this.cacheUserAutomations(activeUserId, list);
+        return list;
+      } catch {
+        return this.getLocalAutomations(activeUserId);
+      }
+    }
+
+    return this.getLocalAutomations();
+  }
+
+  public async logAutomationExecution(
+    exec: Omit<AutomationExecution, 'id' | 'startedAt'>,
+    _untrustedUserId?: string
+  ): Promise<AutomationExecution> {
+    const user = await this.getCurrentUser();
+    const now = new Date().toISOString();
+    const id = generateId('exec');
+
+    if (user && supabase && isSupabaseConfigured) {
+      const verifiedUserId = user.id;
+
+      try {
+        await supabase.from('automation_executions').insert({
+          id,
+          user_id: verifiedUserId,
+          workflow_id: exec.workflowId,
+          workflow_name: exec.workflowName,
+          trigger_source: exec.triggerSource,
+          status: exec.status,
+          input_payload: exec.inputPayload || null,
+          output_payload: exec.outputPayload || null,
+          error_message: exec.errorMessage || null,
+          started_at: now,
+          completed_at: exec.completedAt || now,
+        });
+      } catch (err) {
+        console.warn('[StorageService] Error logging automation execution to Supabase:', err);
+      }
+    }
+
+    const item: AutomationExecution = {
+      ...exec,
+      id,
+      startedAt: now,
+    };
+    const current = this.getLocalAutomations(user?.id);
+    this.cacheUserAutomations(user?.id, [item, ...current].slice(0, 50));
+    return item;
+  }
+
+  // ============================================================================
+  // DOCUMENTS MANAGEMENT
+  // ============================================================================
+
+  public async getDocuments(passedUserId?: string): Promise<DocumentItem[]> {
+    const user = await this.getCurrentUser();
+    const activeUserId = user?.id || passedUserId;
+    if (activeUserId && supabase && isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from('documents')
+          .select('*')
+          .eq('user_id', activeUserId)
+          .order('created_at', { ascending: false });
+        if (!error && data) {
+          const list: DocumentItem[] = data.map((d: any) => ({
+            id: d.id,
+            userId: d.user_id,
+            name: d.name,
+            size: d.size,
+            mimeType: d.mime_type,
+            extractedText: d.extracted_text,
+            summary: d.summary,
+            keyTakeaways: d.key_takeaways,
+            suggestedTasks: d.suggested_tasks,
+            uploadedAt: d.created_at
+          }));
+          this.cacheUserDocuments(activeUserId, list);
+          return list;
+        }
+      } catch {
+        return this.getLocalDocuments(activeUserId);
+      }
+    }
+    return this.getLocalDocuments(activeUserId);
+  }
+
+  public async saveDocument(docData: Omit<DocumentItem, 'id' | 'uploadedAt'>, passedUserId?: string): Promise<DocumentItem> {
+    const user = await this.getCurrentUser();
+    const activeUserId = user?.id || passedUserId;
+    const now = new Date().toISOString();
+    const id = generateId('doc');
+
+    if (activeUserId && supabase && isSupabaseConfigured) {
+      try {
+        await supabase.from('documents').insert({
+          id,
+          user_id: activeUserId,
+          name: docData.name,
+          size: docData.size,
+          mime_type: docData.mimeType,
+          extracted_text: docData.extractedText,
+          summary: docData.summary || null,
+          key_takeaways: docData.keyTakeaways || [],
+          suggested_tasks: docData.suggestedTasks || [],
+          created_at: now
+        });
+      } catch (err) {
+        console.warn('Failed to save document to Supabase:', err);
+      }
+    }
+
+    const doc: DocumentItem = { ...docData, id, uploadedAt: now };
+    const current = this.getLocalDocuments(activeUserId);
+    this.cacheUserDocuments(activeUserId, [doc, ...current]);
+    await this.logActivity('document_analyzed', doc.name, 'Document', undefined, activeUserId);
+    return doc;
+  }
+
+  public async deleteDocument(id: string, passedUserId?: string): Promise<void> {
+    const user = await this.getCurrentUser();
+    const activeUserId = user?.id || passedUserId;
+    if (activeUserId && supabase && isSupabaseConfigured) {
+      try {
+        await supabase.from('documents').delete().eq('id', id).eq('user_id', activeUserId);
+      } catch (e) {
+        console.warn('Could not delete document from Supabase:', e);
+      }
+    }
+    const current = this.getLocalDocuments(activeUserId);
+    this.cacheUserDocuments(activeUserId, current.filter(d => d.id !== id));
+  }
+
+  public getLocalDocuments(userId?: string): DocumentItem[] {
+    if (!this.isBrowser()) return [];
+    try {
+      const key = this.getUserStorageKey(STORAGE_KEYS.DOCUMENTS, userId);
+      const data = localStorage.getItem(key);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private cacheUserDocuments(userId?: string, docs: DocumentItem[] = []): void {
+    this.saveToStorage(this.getUserStorageKey(STORAGE_KEYS.DOCUMENTS, userId), docs);
+  }
+
+  // ============================================================================
+  // ACTIVITIES AUDIT TRAIL
   // ============================================================================
 
   public async getActivities(passedUserId?: string): Promise<ActivityItem[]> {
@@ -733,9 +976,7 @@ class StorageService {
           .order('created_at', { ascending: false })
           .limit(30);
 
-        if (error) {
-          return this.getLocalActivities(activeUserId);
-        }
+        if (error) return this.getLocalActivities(activeUserId);
 
         const list = (data || []).map(rowToActivity);
         this.cacheUserActivities(activeUserId, list);
@@ -759,7 +1000,7 @@ class StorageService {
 
     if (user && supabase && isSupabaseConfigured) {
       const verifiedUserId = user.id;
-      const actId = `act-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+      const actId = generateId('act');
 
       try {
         await supabase.from('activities').insert({
@@ -777,13 +1018,13 @@ class StorageService {
 
       const current = this.getLocalActivities(verifiedUserId);
       const item: ActivityItem = {
+        id: actId,
         userId: verifiedUserId,
         type,
         title,
         category,
         description,
         timestamp: new Date().toISOString(),
-        id: ''
       };
       this.cacheUserActivities(verifiedUserId, [item, ...current].slice(0, 30));
       return;
@@ -793,117 +1034,35 @@ class StorageService {
   }
 
   // ============================================================================
-  // BACKWARD-COMPATIBLE LOCAL STORAGE MIGRATION
-  // ============================================================================
-
-  /**
-   * Safely migrates existing local non-demo memories and reminders to Supabase
-   * when a user first logs in. Preserves existing local data and does not delete it.
-   */
-  public async syncLocalDataToSupabase(userId: string): Promise<void> {
-    if (!supabase || !isSupabaseConfigured || !this.isBrowser()) return;
-
-    const migrationKey = `${STORAGE_KEYS.MIGRATED_PREFIX}${userId}`;
-    if (localStorage.getItem(migrationKey)) {
-      return; // Already synchronized
-    }
-
-    try {
-      // Check if user already has records in Supabase
-      const { count, error } = await supabase
-        .from('memories')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId);
-
-      if (error) return;
-
-      // If user account is new with zero records, migrate existing non-demo local items
-      if (count === 0) {
-        const localMemories = this.getLocalMemories();
-        const nonDemoMemories = localMemories.filter(m => !m.isDemo);
-
-        if (nonDemoMemories.length > 0) {
-          const rows = nonDemoMemories.map(m => memoryToRow(m, userId));
-          await supabase.from('memories').insert(rows);
-        }
-
-        const localReminders = this.getLocalReminders();
-        const nonDemoReminders = localReminders.filter(r => !r.isDemo);
-
-        if (nonDemoReminders.length > 0) {
-          const rows = nonDemoReminders.map(r => reminderToRow(r, userId));
-          await supabase.from('reminders').insert(rows);
-        }
-      }
-
-      // Mark migration complete for this user without deleting local data
-      localStorage.setItem(migrationKey, 'true');
-    } catch (e) {
-      console.warn('[StorageService] Note during local data migration:', e);
-    }
-  }
-
-  // ============================================================================
   // SETTINGS & LOCAL STORAGE HELPERS
   // ============================================================================
 
-  
-  public getSettings(userId?: string): UserSettings {
+  public getSettings(): UserSettings {
     if (!this.isBrowser()) return defaultSettings;
-
     try {
-      const settingsKey = userId
-        ? `${STORAGE_KEYS.SETTINGS}_${userId}`
-        : STORAGE_KEYS.SETTINGS;
-
-      const data = localStorage.getItem(settingsKey);
-
-      return data
-        ? { ...defaultSettings, ...JSON.parse(data) }
-        : defaultSettings;
+      const data = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      return data ? { ...defaultSettings, ...JSON.parse(data) } : defaultSettings;
     } catch {
       return defaultSettings;
     }
   }
 
-  public updateSettings(
-    updates: Partial<UserSettings>,
-    userId?: string
-  ): UserSettings {
-    const current = this.getSettings(userId);
+  public updateSettings(updates: Partial<UserSettings>): UserSettings {
+    const current = this.getSettings();
     const merged = { ...current, ...updates };
-
-    const settingsKey = userId
-      ? `${STORAGE_KEYS.SETTINGS}_${userId}`
-      : STORAGE_KEYS.SETTINGS;
-
-    this.saveToStorage(settingsKey, merged);
-
+    this.saveToStorage(STORAGE_KEYS.SETTINGS, merged);
     return merged;
   }
 
-
   public resetToDemo(): void {
     if (!this.isBrowser()) return;
-    this.saveToStorage(STORAGE_KEYS.MEMORIES, getDemoMemories());
-    this.saveToStorage(STORAGE_KEYS.REMINDERS, getDemoReminders());
+    this.saveToStorage(STORAGE_KEYS.MEMORIES, []);
+    this.saveToStorage(STORAGE_KEYS.REMINDERS, []);
+    this.saveToStorage(STORAGE_KEYS.TASKS, []);
+    this.saveToStorage(STORAGE_KEYS.INTEGRATIONS, []);
+    this.saveToStorage(STORAGE_KEYS.AUTOMATIONS, []);
     this.saveToStorage(STORAGE_KEYS.SETTINGS, defaultSettings);
-    this.saveToStorage(STORAGE_KEYS.ACTIVITIES, [
-      {
-        id: 'act-init-1',
-        type: 'create_memory',
-        title: "Loaded Rahul's Birthday demo memory",
-        category: 'Birthday',
-        timestamp: new Date().toISOString(),
-      },
-      {
-        id: 'act-init-2',
-        type: 'create_reminder',
-        title: "Loaded Professor Sharma consultation demo reminder",
-        category: 'Academic',
-        timestamp: new Date().toISOString(),
-      }
-    ]);
+    this.saveToStorage(STORAGE_KEYS.ACTIVITIES, []);
     localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
   }
 
@@ -911,24 +1070,28 @@ class StorageService {
     if (!this.isBrowser()) return;
     this.saveToStorage(STORAGE_KEYS.MEMORIES, []);
     this.saveToStorage(STORAGE_KEYS.REMINDERS, []);
+    this.saveToStorage(STORAGE_KEYS.TASKS, []);
     this.saveToStorage(STORAGE_KEYS.ACTIVITIES, []);
   }
 
   public exportBackup(
     currentMemories?: Memory[],
-    currentReminders?: Reminder[]
+    currentReminders?: Reminder[],
+    currentTasks?: Task[]
   ): {
     version: string;
     exportedAt: string;
     memories: Memory[];
     reminders: Reminder[];
+    tasks: Task[];
     settings: UserSettings;
   } {
     return {
-      version: '2.0.0',
+      version: '3.0.0',
       exportedAt: new Date().toISOString(),
       memories: currentMemories || this.getLocalMemories(),
       reminders: currentReminders || this.getLocalReminders(),
+      tasks: currentTasks || this.getLocalTasks(),
       settings: this.getSettings(),
     };
   }
@@ -937,34 +1100,28 @@ class StorageService {
     if (!backup || typeof backup !== 'object') {
       throw new Error('Invalid backup file format');
     }
-
-    const user = await this.getCurrentUser();
-    const activeUserId = user?.id || userId;
-
-    if (activeUserId && supabase && isSupabaseConfigured) {
-      if (Array.isArray(backup.memories) && backup.memories.length > 0) {
-        const rows = backup.memories.map((m: any) => memoryToRow(m, activeUserId));
-        await supabase.from('memories').upsert(rows);
-      }
-      if (Array.isArray(backup.reminders) && backup.reminders.length > 0) {
-        const rows = backup.reminders.map((r: any) => reminderToRow(r, activeUserId));
-        await supabase.from('reminders').upsert(rows);
-      }
-    }
-
     if (Array.isArray(backup.memories)) {
-      this.saveToStorage(this.getUserStorageKey(STORAGE_KEYS.MEMORIES, activeUserId), backup.memories);
+      for (const m of backup.memories) {
+        await this.saveMemory(m, userId);
+      }
     }
     if (Array.isArray(backup.reminders)) {
-      this.saveToStorage(this.getUserStorageKey(STORAGE_KEYS.REMINDERS, activeUserId), backup.reminders);
+      for (const r of backup.reminders) {
+        await this.saveReminder(r, userId);
+      }
     }
-    if (backup.settings && typeof backup.settings === 'object') {
-      this.saveToStorage(STORAGE_KEYS.SETTINGS, { ...defaultSettings, ...backup.settings });
+    if (Array.isArray(backup.tasks)) {
+      for (const t of backup.tasks) {
+        await this.saveTask(t, userId);
+      }
+    }
+    if (backup.settings) {
+      this.updateSettings(backup.settings);
     }
   }
 
   // ============================================================================
-  // LOCAL STORAGE FALLBACK METHODS
+  // LOCAL STORAGE HELPERS
   // ============================================================================
 
   public getLocalMemories(userId?: string): Memory[] {
@@ -975,7 +1132,7 @@ class StorageService {
       if (data) return JSON.parse(data);
       if (!userId) {
         const base = localStorage.getItem(STORAGE_KEYS.MEMORIES);
-        return base ? JSON.parse(base) : getDemoMemories();
+        return base ? JSON.parse(base) : [];
       }
       return [];
     } catch {
@@ -987,7 +1144,7 @@ class StorageService {
     const memories = this.getLocalMemories();
     const newMemory: Memory = {
       ...memoryData,
-      id: `mem-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      id: generateId('mem'),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -1031,7 +1188,7 @@ class StorageService {
       if (data) return JSON.parse(data);
       if (!userId) {
         const base = localStorage.getItem(STORAGE_KEYS.REMINDERS);
-        return base ? JSON.parse(base) : getDemoReminders();
+        return base ? JSON.parse(base) : [];
       }
       return [];
     } catch {
@@ -1045,7 +1202,7 @@ class StorageService {
     const reminders = this.getLocalReminders();
     const newReminder: Reminder = {
       ...reminderData,
-      id: `rem-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      id: generateId('rem'),
       status: reminderData.status || 'upcoming',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -1082,16 +1239,92 @@ class StorageService {
     }
   }
 
+  public getLocalTasks(userId?: string): Task[] {
+    if (!this.isBrowser()) return [];
+    try {
+      const key = this.getUserStorageKey(STORAGE_KEYS.TASKS, userId);
+      const data = localStorage.getItem(key);
+      if (data) return JSON.parse(data);
+      if (!userId) {
+        const base = localStorage.getItem(STORAGE_KEYS.TASKS);
+        return base ? JSON.parse(base) : getDemoTasks();
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  }
+
+  public saveLocalTask(taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Task {
+    const tasks = this.getLocalTasks();
+    const newTask: Task = {
+      ...taskData,
+      id: generateId('task'),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    tasks.unshift(newTask);
+    this.saveToStorage(STORAGE_KEYS.TASKS, tasks);
+    this.logLocalActivity('create_task', newTask.title, newTask.category);
+    return newTask;
+  }
+
+  public updateLocalTask(id: string, updates: Partial<Task>): Task {
+    const tasks = this.getLocalTasks();
+    const index = tasks.findIndex(t => t.id === id);
+    if (index === -1) throw new Error('Task not found');
+
+    const updated: Task = {
+      ...tasks[index],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    tasks[index] = updated;
+    this.saveToStorage(STORAGE_KEYS.TASKS, tasks);
+    this.logLocalActivity('update_task', updated.title, updated.category);
+    return updated;
+  }
+
+  public deleteLocalTask(id: string): void {
+    const tasks = this.getLocalTasks();
+    const task = tasks.find(t => t.id === id);
+    const filtered = tasks.filter(t => t.id !== id);
+    this.saveToStorage(STORAGE_KEYS.TASKS, filtered);
+    if (task) {
+      this.logLocalActivity('delete_task', task.title, task.category);
+    }
+  }
+
+  public getLocalIntegrations(userId?: string): IntegrationItem[] {
+    if (!this.isBrowser()) return getDemoIntegrations();
+    try {
+      const key = this.getUserStorageKey(STORAGE_KEYS.INTEGRATIONS, userId);
+      const data = localStorage.getItem(key);
+      if (data) return JSON.parse(data);
+      return getDemoIntegrations();
+    } catch {
+      return getDemoIntegrations();
+    }
+  }
+
+  public getLocalAutomations(userId?: string): AutomationExecution[] {
+    if (!this.isBrowser()) return getDemoAutomations();
+    try {
+      const key = this.getUserStorageKey(STORAGE_KEYS.AUTOMATIONS, userId);
+      const data = localStorage.getItem(key);
+      if (data) return JSON.parse(data);
+      return getDemoAutomations();
+    } catch {
+      return getDemoAutomations();
+    }
+  }
+
   public getLocalActivities(userId?: string): ActivityItem[] {
     if (!this.isBrowser()) return [];
     try {
       const key = this.getUserStorageKey(STORAGE_KEYS.ACTIVITIES, userId);
       const data = localStorage.getItem(key);
       if (data) return JSON.parse(data);
-      if (!userId) {
-        const base = localStorage.getItem(STORAGE_KEYS.ACTIVITIES);
-        return base ? JSON.parse(base) : [];
-      }
       return [];
     } catch {
       return [];
@@ -1101,7 +1334,7 @@ class StorageService {
   public logLocalActivity(type: ActivityType, title: string, category?: string, description?: string): void {
     const activities = this.getLocalActivities();
     const item: ActivityItem = {
-      id: `act-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      id: generateId('act'),
       type,
       title,
       category,
@@ -1112,29 +1345,32 @@ class StorageService {
     this.saveToStorage(STORAGE_KEYS.ACTIVITIES, activities.slice(0, 30));
   }
 
-  // ============================================================================
-  // INTERNAL CACHING & UTILITIES
-  // ============================================================================
-
   private getUserStorageKey(baseKey: string, userId?: string): string {
     return userId ? `${baseKey}_${userId}` : baseKey;
   }
 
-  private cacheUserMemories(userId: string, memories: Memory[]): void {
+  private cacheUserMemories(userId?: string, memories: Memory[] = []): void {
     this.saveToStorage(this.getUserStorageKey(STORAGE_KEYS.MEMORIES, userId), memories);
   }
 
-  private cacheUserReminders(userId: string, reminders: Reminder[]): void {
+  private cacheUserReminders(userId?: string, reminders: Reminder[] = []): void {
     this.saveToStorage(this.getUserStorageKey(STORAGE_KEYS.REMINDERS, userId), reminders);
   }
 
-  private cacheUserActivities(userId: string, activities: ActivityItem[]): void {
-    this.saveToStorage(this.getUserStorageKey(STORAGE_KEYS.ACTIVITIES, userId), activities);
+  private cacheUserTasks(userId?: string, tasks: Task[] = []): void {
+    this.saveToStorage(this.getUserStorageKey(STORAGE_KEYS.TASKS, userId), tasks);
   }
 
-  private recalculateOverdueStatuses(): void {
-    const reminders = this.getLocalReminders();
-    this.saveToStorage(STORAGE_KEYS.REMINDERS, reminders);
+  private cacheUserIntegrations(userId?: string, integrations: IntegrationItem[] = []): void {
+    this.saveToStorage(this.getUserStorageKey(STORAGE_KEYS.INTEGRATIONS, userId), integrations);
+  }
+
+  private cacheUserAutomations(userId?: string, automations: AutomationExecution[] = []): void {
+    this.saveToStorage(this.getUserStorageKey(STORAGE_KEYS.AUTOMATIONS, userId), automations);
+  }
+
+  private cacheUserActivities(userId?: string, activities: ActivityItem[] = []): void {
+    this.saveToStorage(this.getUserStorageKey(STORAGE_KEYS.ACTIVITIES, userId), activities);
   }
 
   private checkOverdueList(list: Reminder[]): Reminder[] {

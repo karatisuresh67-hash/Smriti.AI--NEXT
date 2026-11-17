@@ -1,29 +1,11 @@
-import { GoogleGenAI } from '@google/genai';
 import type { ApiRequest, ApiResponse } from './_utils/serverTypes';
-import { getGeminiApiKey, getGeminiModel } from './_utils/env.js';
+import { validateAuthToken } from './_utils/auth';
+import { runUnifiedAgent } from './agent/unifiedEngine';
 
-
-function withTimeout<T>(
-  operation: Promise<T>,
-  timeoutMs: number,
-  label: string
-): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => {
-      reject(new Error(`${label} timed out after ${timeoutMs} ms`));
-    }, timeoutMs);
-  });
-
-  return Promise.race([operation, timeout]).finally(() => {
-    if (timer) clearTimeout(timer);
-  });
-}
 /**
  * Serverless API Endpoint: /api/chat
- * Handles conversational queries grounded in the user's personal memories & reminders.
- * Returns structured replies and optional proposed actions.
+ * Handles conversational and autonomous agent directives.
+ * Powered by the unified Smriti AI reasoning engine.
  */
 export default async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
   if (req.method !== 'POST') {
@@ -34,15 +16,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
     return;
   }
 
-  const apiKey = getGeminiApiKey();
-  if (!apiKey) {
-    res.status(503).json({
-      error: 'GEMINI_API_KEY is not configured on the server. Please set a valid key in .env.local or deployment environment.',
-      code: 'MISSING_API_KEY'
-    });
-    return;
-  }
-
+  // Parse request body
   let body = req.body;
   if (typeof body === 'string') {
     try {
@@ -63,6 +37,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
     history = [],
     memories = [],
     reminders = [],
+    tasks = [],
+    documents = [],
     currentDateTime,
     userTimezone
   } = body;
@@ -72,257 +48,43 @@ export default async function handler(req: ApiRequest, res: ApiResponse): Promis
     return;
   }
 
-  if (message.length > 2000) {
-    res.status(400).json({ error: 'Message exceeds 2,000 character limit.' });
+  if (message.length > 3000) {
+    res.status(400).json({ error: 'Message exceeds character limit.' });
     return;
   }
 
-  const cappedHistory = Array.isArray(history)
-  ? history.slice(-6).map((item: any) => ({
-      role: item?.role,
-      content: typeof item?.content === 'string'
-        ? item.content.slice(0, 2000)
-        : '',
-    }))
-  : [];
-
-const cappedMemories = Array.isArray(memories)
-  ? memories.slice(0, 25)
-  : [];
-
-const cappedReminders = Array.isArray(reminders)
-  ? reminders.slice(0, 25)
-  : [];
-
-  const modelName = 'gemini-3.5-flash-lite';
-
-  const requestStartedAt = Date.now();
+  // Validate optional session authentication
+  const authResult = await validateAuthToken(req);
 
   try {
-    const ai = new GoogleGenAI({
-  apiKey,
-  httpOptions: {
-    timeout: 30000,
-  },
-});
-
-    const memoriesText = cappedMemories.length > 0
-      ? cappedMemories.map((m: any) => `- [ID: ${m.id}] ${m.title}: ${m.content} (Category: ${m.category || 'General'}, Date: ${m.date || 'None'}, Person: ${m.person || 'None'})`).join('\n')
-      : 'No saved memories yet.';
-
-    const remindersText = cappedReminders.length > 0
-      ? cappedReminders.map((r: any) => `- [ID: ${r.id}] ${r.title} (Due: ${r.date || 'Someday'} ${r.time || ''}, Status: ${r.status}, Priority: ${r.priority}, Category: ${r.category || 'General'})`).join('\n')
-      : 'No saved reminders yet.';
-
-    const systemInstruction = `You are Smriti AI, an intelligent, empathetic personal AI memory assistant.
-Tagline: "Remember what matters. Let AI handle the rest."
-
-CRITICAL RULES:
-1. GROUNDING IN PERSONAL CONTEXT:
-   - When answering questions about the user's life, friends, schedule, preferences, or tasks, use ONLY the SAVED MEMORIES and SAVED REMINDERS provided below.
-   - NEVER invent, assume, or hallucinate a personal fact, birthday, date, person, or reminder.
-   - If the user asks for a personal fact not in the context, explicitly say that it is not saved yet (e.g. "I don't have Rahul's phone number saved in your memories yet. Would you like me to remember it?").
-   - Clearly distinguish between saved facts and helpful suggestions or assumptions.
-
-2. TEMPORAL CONTEXT:
-   - The user's current date and time is: ${currentDateTime || new Date().toISOString()}
-   - The user's timezone is: ${userTimezone || 'local'}
-   - Interpret relative dates (like "tomorrow", "in 2 days", "next Monday", "two days before Rahul's birthday") strictly based on the current date and context.
-   - For annual birthdays or events without a year, if the month/day is known, support the upcoming date or clarify the year.
-
-3. ACTION PROPOSALS:
-   - When the user asks you to remember, save, or set a reminder, or when saving a fact/reminder is a natural follow-up, propose a structured action.
-   - Valid action types:
-     a) "create_memory":
-        {
-          "type": "create_memory",
-          "title": "Title of the memory (concise)",
-          "content": "Full description of what to remember",
-          "category": "Birthday" | "People" | "Personal Goal" | "Important Event" | "Preference" | "Other",
-          "date": "YYYY-MM-DD" (or "" if not date-specific),
-          "person": "Name of person or entity" (or "")
-        }
-     b) "create_reminder":
-        {
-          "type": "create_reminder",
-          "title": "Clear reminder title",
-          "description": "Details or notes",
-          "date": "YYYY-MM-DD",
-          "time": "HH:MM" (24-hour format, e.g. "09:00", "17:30"),
-          "category": "Personal" | "Academic" | "Work" | "Project" | "Health" | "Other",
-          "priority": "Low" | "Medium" | "High",
-          "linkedMemoryId": "ID of memory if linked" (or null)
-        }
-   - If no new memory or reminder needs to be created, "action" MUST be null.
-
-4. RESPONSE FORMAT:
-   - You MUST respond strictly in valid JSON matching this structure:
-   {
-     "reply": "Your conversational answer to the user in clean text (or standard markdown if listing items).",
-     "action": null | { ...action object... }
-   }
-   - Do NOT wrap in markdown code blocks like \`\`\`json. Output raw JSON directly.
-
----
-CURRENT SAVED MEMORIES:
-${memoriesText}
-
-CURRENT SAVED REMINDERS:
-${remindersText}
----`;
-
-    const contents: any[] = [];
-
-    for (const item of cappedHistory) {
-      if (item.role === 'user') {
-        contents.push({ role: 'user', parts: [{ text: item.content }] });
-      } else if (item.role === 'model' || item.role === 'assistant') {
-        contents.push({ role: 'model', parts: [{ text: item.content }] });
-      }
-    }
-
-    contents.push({
-      role: 'user',
-      parts: [{ text: message }]
+    const result = await runUnifiedAgent({
+      message,
+      history,
+      memories,
+      reminders,
+      tasks,
+      documents,
+      currentDateTime,
+      userTimezone,
+      isVoice: false
     });
-
-    
-
-console.info('[Smriti Chat] Gemini request started', {
-  model: modelName,
-  historyCount: cappedHistory.length,
-  memoryCount: cappedMemories.length,
-  reminderCount: cappedReminders.length,
-});
-
-const response = await withTimeout(
-  ai.models.generateContent({
-    model: modelName,
-    contents,
-    config: {
-      systemInstruction,
-      responseMimeType: 'application/json',
-      maxOutputTokens: 1024,
-    },
-  }),
-  25000,
-  'Gemini generation'
-);
-
-console.info('[Smriti Chat] Gemini request completed', {
-  elapsedMs: Date.now() - requestStartedAt,
-  model: modelName,
-});
-
-
-    const responseText = response.text || '';
-    if (!responseText) {
-      throw new Error('Gemini API returned an empty response.');
-    }
-
-    let parsedResult: any;
-    try {
-      const cleaned = responseText
-        .replace(/^```json\s*/i, '')
-        .replace(/^```\s*/i, '')
-        .replace(/\s*```$/i, '')
-        .trim();
-      parsedResult = JSON.parse(cleaned);
-    } catch {
-      parsedResult = {
-        reply: responseText,
-        action: null
-      };
-    }
-
-    if (typeof parsedResult.reply !== 'string') {
-  if (parsedResult.reply && typeof parsedResult.reply === 'object') {
-    parsedResult.reply = JSON.stringify(parsedResult.reply, null, 2);
-  } else {
-    parsedResult.reply = 'Sorry, I could not generate a valid text response. Please try again.';
-  }
-}
-
-    if (parsedResult.action) {
-      const act = parsedResult.action;
-      if (act.type !== 'create_memory' && act.type !== 'create_reminder') {
-        parsedResult.action = null;
-      } else {
-        if (!act.title || typeof act.title !== 'string') {
-          parsedResult.action = null;
-        } else {
-          act.title = act.title.trim().slice(0, 150);
-          if (act.type === 'create_memory') {
-            act.content = typeof act.content === 'string' ? act.content.trim().slice(0, 1000) : act.title;
-            act.category = act.category || 'Other';
-            act.date = typeof act.date === 'string' ? act.date.trim() : '';
-            act.person = typeof act.person === 'string' ? act.person.trim() : '';
-          } else if (act.type === 'create_reminder') {
-            act.description = typeof act.description === 'string' ? act.description.trim().slice(0, 500) : '';
-            act.date = typeof act.date === 'string' ? act.date.trim() : '';
-            act.time = typeof act.time === 'string' ? act.time.trim() : '';
-            act.category = act.category || 'Personal';
-            act.priority = ['Low', 'Medium', 'High'].includes(act.priority) ? act.priority : 'Medium';
-          }
-        }
-      }
-    }
 
     res.status(200).json({
-      reply: parsedResult.reply,
-      action: parsedResult.action,
-      model: modelName
+      reply: result.reply,
+      speechText: result.speechText,
+      intent: result.intent,
+      action: result.action,
+      chromeAction: result.chromeAction,
+      plan: result.plan,
+      model: result.model,
+      requiresApproval: result.requiresApproval,
+      userId: authResult.userId || undefined
     });
-
   } catch (error: any) {
-   const errorMessage =
-  error instanceof Error
-    ? error.message
-    : typeof error === 'string'
-      ? error
-      : JSON.stringify(error) || 'Unknown Gemini error';
-
-    const isTimeout =
-  /timed out|timeout|deadline/i.test(errorMessage);
-
-console.error('[Smriti Chat] Request failed', {
-  elapsedMs: Date.now() - requestStartedAt,
-  message: errorMessage,
-  status: error?.status,
-  code: error?.code,
-});
-    const isQuota = errorMessage.includes('429') || /quota|rate/i.test(errorMessage);
-    const isAuth = errorMessage.includes('401') || errorMessage.includes('403') || /api key/i.test(errorMessage);
-
-    let userFriendlyError = 'API Error: Failed to process request.';
-    let statusCode = 500;
-
-    if (isAuth) {
-      statusCode = 401;
-      userFriendlyError = 'API Error: Invalid or expired API key.';
-    } else if (isQuota) {
-      statusCode = 429;
-      userFriendlyError = 'API Error: Rate limit or quota exceeded.';
-    } else {
-      userFriendlyError = `API Error: ${errorMessage}`;
-    }
-
-    if (isTimeout) {
-  statusCode = 504;
-  userFriendlyError =
-    'Smriti took too long to get an AI response. Please try again.';
-} else if (isAuth) {
-  statusCode = 401;
-  userFriendlyError = 'API Error: Invalid or expired API key.';
-} else if (isQuota) {
-  statusCode = 429;
-  userFriendlyError = 'API Error: Rate limit or quota exceeded.';
-} else {
-  userFriendlyError = 'API Error: Failed to process request.';
-}
-
-    res.status(statusCode).json({
-      error: userFriendlyError
+    console.error('[Smriti Chat API] Error during agent execution:', error);
+    res.status(500).json({
+      error: error?.message || 'Internal server error while processing AI agent directive.',
+      code: error?.code || 'AGENT_ERROR'
     });
   }
 }

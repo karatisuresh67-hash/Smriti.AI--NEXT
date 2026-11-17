@@ -39,18 +39,20 @@ export function MemoriesPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-navy-900 tracking-tight flex items-center gap-2.5">
-            <Brain className="w-7 h-7 text-violet-600" />
-            My Memories
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+              <Brain className="w-5 h-5" />
+            </div>
+            <span>My Memories</span>
           </h1>
-          <p className="text-sm text-slate-500 font-medium mt-0.5">
-            {memories.length} total saved knowledge item{memories.length === 1 ? '' : 's'} in your personal store
+          <p className="text-sm text-slate-400 mt-1">
+            {memories.length} persistent knowledge item{memories.length === 1 ? '' : 's'} indexed in your AI vault.
           </p>
         </div>
 
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center justify-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold text-sm rounded-xl shadow-soft transition-all active:scale-95"
+          className="flex items-center justify-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 hover:from-violet-500 hover:to-cyan-400 text-white font-bold text-sm rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] transition-all active:scale-95"
         >
           <Plus className="w-4 h-4" />
           <span>New Memory</span>
@@ -67,36 +69,36 @@ export function MemoriesPage() {
 
       {/* Memories Grid or Empty State */}
       {filteredMemories.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center shadow-soft max-w-lg mx-auto my-6">
-          <div className="w-16 h-16 rounded-2xl bg-violet-50 text-violet-500 flex items-center justify-center mx-auto mb-4">
+        <div className="bg-[#070C1E] rounded-3xl border border-[#1E2540] p-12 text-center shadow-xl max-w-lg mx-auto my-6 space-y-3">
+          <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mx-auto mb-2">
             <FolderOpen className="w-8 h-8" />
           </div>
-          <h2 className="text-lg font-bold text-navy-900">
+          <h2 className="text-lg font-bold text-white">
             {searchQuery || selectedCategory !== 'All'
               ? 'No matching memories found'
               : 'No memories saved yet'}
           </h2>
-          <p className="text-xs text-slate-500 max-w-xs mx-auto mt-2 leading-relaxed">
+          <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
             {searchQuery || selectedCategory !== 'All'
               ? 'Try modifying your search keywords or switching category filters.'
-              : 'Start by saving your friends’ birthdays, important office hours, personal preferences, or life goals!'}
+              : 'Start by saving birthdays, important project notes, personal preferences, or life goals!'}
           </p>
 
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
             {searchQuery || selectedCategory !== 'All' ? (
               <button
                 onClick={() => {
                   setSearchQuery('');
                   setSelectedCategory('All');
                 }}
-                className="px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+                className="px-4 py-2 text-xs font-semibold text-slate-300 bg-[#0B1024] hover:bg-[#121A38] border border-[#1E2540] rounded-xl transition-colors"
               >
                 Clear Filters
               </button>
             ) : (
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="px-4 py-2 text-xs font-semibold text-white bg-violet-600 hover:bg-violet-700 rounded-xl transition-colors"
+                className="px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 rounded-xl transition-colors shadow-md"
               >
                 Create First Memory
               </button>

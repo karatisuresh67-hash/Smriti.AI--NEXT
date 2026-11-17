@@ -200,6 +200,7 @@ const savedAvatar = avatar || data?.avatar_url || null;
           provider: 'google',
           options: {
             redirectTo: window.location.origin,
+            scopes: 'email profile https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.compose',
             queryParams: {
               access_type: 'offline',
               prompt: 'consent',

@@ -1,0 +1,293 @@
+warning: in the working copy of 'api/chat.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'api/voice/query.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/supabase-schema.sql', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/App.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/chat/ActionCard.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/chat/ChatMessage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/layout/MobileNav.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/layout/Navbar.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/layout/Sidebar.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/context/AppContext.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/context/AuthContext.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pages/CalendarPage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pages/ChatPage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pages/DashboardPage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pages/MemoriesPage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pages/RemindersPage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pages/SettingsPage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/pages/VoicePage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/services/apiService.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/services/storageService.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/services/voiceAssistantService.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/test/App.test.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/types/index.ts', LF will be replaced by CRLF the next time Git touches it
+src/components/chat/ActionCard.tsx:2: trailing whitespace.
+[32m+[m[32mimport {[m[41m [m
+src/components/chat/ActionCard.tsx:3: trailing whitespace.
+[32m+[m[32m  Brain,[m[41m [m
+src/components/chat/ActionCard.tsx:4: trailing whitespace.
+[32m+[m[32m  Bell,[m[41m [m
+src/components/chat/ActionCard.tsx:5: trailing whitespace.
+[32m+[m[32m  Check,[m[41m [m
+src/components/chat/ActionCard.tsx:6: trailing whitespace.
+[32m+[m[32m  X,[m[41m [m
+src/components/chat/ActionCard.tsx:7: trailing whitespace.
+[32m+[m[32m  CheckSquare,[m[41m [m
+src/components/chat/ActionCard.tsx:8: trailing whitespace.
+[32m+[m[32m  Calendar as CalendarIcon,[m[41m [m
+src/components/chat/ActionCard.tsx:9: trailing whitespace.
+[32m+[m[32m  Mail,[m[41m [m
+src/components/chat/ActionCard.tsx:10: trailing whitespace.
+[32m+[m[32m  Share2,[m[41m [m
+src/components/chat/ActionCard.tsx:11: trailing whitespace.
+[32m+[m[32m  Zap,[m[41m [m
+src/components/chat/ActionCard.tsx:268: trailing whitespace.
+[32m+[m[32m              <a[m[41m [m
+src/components/chat/ActionCard.tsx:269: trailing whitespace.
+[32m+[m[32m                href={action.destinationUrl}[m[41m [m
+src/components/chat/ActionCard.tsx:270: trailing whitespace.
+[32m+[m[32m                target="_blank"[m[41m [m
+src/components/chat/ActionCard.tsx:271: trailing whitespace.
+[32m+[m[32m                rel="noreferrer"[m[41m [m
+src/components/layout/MobileNav.tsx:33: trailing whitespace.
+[32m+[m[32m          const isActive =[m[41m [m
+src/components/layout/MobileNav.tsx:34: trailing whitespace.
+[32m+[m[32m            currentTab === item.id ||[m[41m [m
+src/components/layout/Sidebar.tsx:21: trailing whitespace.
+[32m+[m[32m  const {[m[41m [m
+src/components/layout/Sidebar.tsx:22: trailing whitespace.
+[32m+[m[32m    currentTab,[m[41m [m
+src/components/layout/Sidebar.tsx:23: trailing whitespace.
+[32m+[m[32m    setCurrentTab,[m[41m [m
+src/components/layout/Sidebar.tsx:24: trailing whitespace.
+[32m+[m[32m    memories,[m[41m [m
+src/components/layout/Sidebar.tsx:25: trailing whitespace.
+[32m+[m[32m    pendingTasks,[m[41m [m
+src/components/layout/Sidebar.tsx:33: trailing whitespace.
+[32m+[m[32m  const displayName =[m[41m [m
+src/components/layout/Sidebar.tsx:34: trailing whitespace.
+[32m+[m[32m    profile?.display_name ||[m[41m [m
+src/components/layout/Sidebar.tsx:35: trailing whitespace.
+[32m+[m[32m    user?.user_metadata?.full_name ||[m[41m [m
+src/components/layout/Sidebar.tsx:36: trailing whitespace.
+[32m+[m[32m    user?.user_metadata?.name ||[m[41m [m
+src/components/layout/Sidebar.tsx:37: trailing whitespace.
+[32m+[m[32m    user?.email?.split('@')[0] ||[m[41m [m
+src/components/layout/Sidebar.tsx:40: trailing whitespace.
+[32m+[m[32m  const avatarUrl =[m[41m [m
+src/components/layout/Sidebar.tsx:41: trailing whitespace.
+[32m+[m[32m    profile?.avatar_url ||[m[41m [m
+src/components/layout/Sidebar.tsx:42: trailing whitespace.
+[32m+[m[32m    user?.user_metadata?.avatar_url ||[m[41m [m
+src/components/layout/Sidebar.tsx:55: trailing whitespace.
+[32m+[m[32m      id: 'assistant',[m[41m [m
+src/components/layout/Sidebar.tsx:56: trailing whitespace.
+[32m+[m[32m      label: 'Assistant',[m[41m [m
+src/components/layout/Sidebar.tsx:62: trailing whitespace.
+[32m+[m[32m      label: 'Memories',[m[41m [m
+src/components/layout/Sidebar.tsx:68: trailing whitespace.
+[32m+[m[32m      id: 'tasks',[m[41m [m
+src/components/layout/Sidebar.tsx:69: trailing whitespace.
+[32m+[m[32m      label: 'Tasks',[m[41m [m
+src/components/layout/Sidebar.tsx:81: trailing whitespace.
+[32m+[m[32m      id: 'actions',[m[41m [m
+src/components/layout/Sidebar.tsx:82: trailing whitespace.
+[32m+[m[32m      label: 'Action History',[m[41m [m
+src/components/layout/Sidebar.tsx:87: trailing whitespace.
+[32m+[m[32m    {[m[41m [m
+src/components/layout/Sidebar.tsx:88: trailing whitespace.
+[32m+[m[32m      id: 'results',[m[41m [m
+src/components/layout/Sidebar.tsx:89: trailing whitespace.
+[32m+[m[32m      label: 'Chrome Results',[m[41m [m
+src/components/layout/Sidebar.tsx:94: trailing whitespace.
+[32m+[m[32m    {[m[41m [m
+src/components/layout/Sidebar.tsx:95: trailing whitespace.
+[32m+[m[32m      id: 'documents',[m[41m [m
+src/components/layout/Sidebar.tsx:96: trailing whitespace.
+[32m+[m[32m      label: 'Documents',[m[41m [m
+src/components/layout/Sidebar.tsx:101: trailing whitespace.
+[32m+[m[32m    {[m[41m [m
+src/components/layout/Sidebar.tsx:149: trailing whitespace.
+[32m+[m[32m          const isActive =[m[41m [m
+src/components/layout/Sidebar.tsx:150: trailing whitespace.
+[32m+[m[32m            currentTab === item.id ||[m[41m [m
+src/components/layout/Sidebar.tsx:190: trailing whitespace.
+[32m+[m[32m                <img[m[41m [m
+src/components/layout/Sidebar.tsx:191: trailing whitespace.
+[32m+[m[32m                  src={avatarUrl}[m[41m [m
+src/components/layout/Sidebar.tsx:192: trailing whitespace.
+[32m+[m[32m                  alt={displayName}[m[41m [m
+src/components/layout/Sidebar.tsx:194: trailing whitespace.
+[32m+[m[32m                  className="w-8 h-8 rounded-full object-cover border border-cyan-500/40"[m[41m [m
+src/pages/CalendarPage.tsx:6: trailing whitespace.
+[32m+[m[32mimport {[m[41m [m
+src/pages/CalendarPage.tsx:7: trailing whitespace.
+[32m+[m[32m  Calendar as CalendarIcon,[m[41m [m
+src/pages/CalendarPage.tsx:8: trailing whitespace.
+[32m+[m[32m  Brain,[m[41m [m
+src/pages/CalendarPage.tsx:9: trailing whitespace.
+[32m+[m[32m  Bell,[m[41m [m
+src/pages/CalendarPage.tsx:10: trailing whitespace.
+[32m+[m[32m  Clock,[m[41m [m
+src/pages/CalendarPage.tsx:11: trailing whitespace.
+[32m+[m[32m  CheckSquare,[m[41m [m
+src/pages/CalendarPage.tsx:12: trailing whitespace.
+[32m+[m[32m  RefreshCw,[m[41m [m
+src/pages/CalendarPage.tsx:333: trailing whitespace.
+[32m+[m[32m                  selectedEvent.type === 'memory'[m[41m [m
+src/pages/CalendarPage.tsx:334: trailing whitespace.
+[32m+[m[32m                    ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30'[m[41m [m
+src/pages/ChatPage.tsx:28: trailing whitespace.
+[32m+[m[32m    dispatchChromeAction[m[41m [m
+src/pages/DashboardPage.tsx:4: trailing whitespace.
+[32m+[m[32m  Send,[m[41m [m
+src/pages/DashboardPage.tsx:5: trailing whitespace.
+[32m+[m[32m  Mic,[m[41m [m
+src/pages/DashboardPage.tsx:6: trailing whitespace.
+[32m+[m[32m  Paperclip,[m[41m [m
+src/pages/DashboardPage.tsx:7: trailing whitespace.
+[32m+[m[32m  CheckSquare,[m[41m [m
+src/pages/DashboardPage.tsx:9: trailing whitespace.
+[32m+[m[32m  Plus,[m[41m [m
+src/pages/DashboardPage.tsx:10: trailing whitespace.
+[32m+[m[32m  ArrowRight,[m[41m [m
+src/pages/DashboardPage.tsx:32: trailing whitespace.
+[32m+[m[32m    tasks,[m[41m [m
+src/pages/DashboardPage.tsx:33: trailing whitespace.
+[32m+[m[32m    toggleTaskStatus,[m[41m [m
+src/pages/DashboardPage.tsx:34: trailing whitespace.
+[32m+[m[32m    setCurrentTab,[m[41m [m
+src/pages/DashboardPage.tsx:35: trailing whitespace.
+[32m+[m[32m    setChatMessages,[m[41m [m
+src/pages/DashboardPage.tsx:42: trailing whitespace.
+[32m+[m[32m    addToast[m[41m [m
+src/pages/DashboardPage.tsx:51: trailing whitespace.
+[32m+[m[32m  const displayName =[m[41m [m
+src/pages/DashboardPage.tsx:52: trailing whitespace.
+[32m+[m[32m    profile?.display_name ||[m[41m [m
+src/pages/DashboardPage.tsx:53: trailing whitespace.
+[32m+[m[32m    user?.user_metadata?.full_name ||[m[41m [m
+src/pages/DashboardPage.tsx:54: trailing whitespace.
+[32m+[m[32m    user?.user_metadata?.name ||[m[41m [m
+src/pages/DashboardPage.tsx:55: trailing whitespace.
+[32m+[m[32m    user?.email?.split('@')[0] ||[m[41m [m
+src/pages/DashboardPage.tsx:109: trailing whitespace.
+[32m+[m[32m    const isDeepBrowserDirective =[m[41m [m
+src/pages/DashboardPage.tsx:517: trailing whitespace.
+[32m+[m[32m                      isCompleted[m[41m [m
+src/pages/DashboardPage.tsx:518: trailing whitespace.
+[32m+[m[32m                        ? 'bg-[#050918] border-[#161D36] text-slate-500 opacity-60'[m[41m [m
+src/pages/DashboardPage.tsx:534: trailing whitespace.
+[32m+[m[32m                      task.priority === 'High'[m[41m [m
+src/pages/DashboardPage.tsx:535: trailing whitespace.
+[32m+[m[32m                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'[m[41m [m
+src/pages/SettingsPage.tsx:9: trailing whitespace.
+[32m+[m[32m  LogOut,[m[41m [m
+src/pages/SettingsPage.tsx:10: trailing whitespace.
+[32m+[m[32m  Sparkles,[m[41m [m
+src/pages/SettingsPage.tsx:34: trailing whitespace.
+[32m+[m[32m    memories,[m[41m [m
+src/pages/SettingsPage.tsx:35: trailing whitespace.
+[32m+[m[32m    reminders,[m[41m [m
+src/pages/SettingsPage.tsx:37: trailing whitespace.
+[32m+[m[32m    importBackup,[m[41m [m
+src/pages/SettingsPage.tsx:38: trailing whitespace.
+[32m+[m[32m    addToast[m[41m [m
+src/pages/VoicePage.tsx:6: trailing whitespace.
+[32m+[m[32m  VolumeX,[m[41m [m
+src/pages/VoicePage.tsx:271: trailing whitespace.
+[32m+[m[41m                    [m
+src/pages/VoicePage.tsx:280: trailing whitespace.
+[32m+[m[32m                              bar <= item.frequency[m[41m [m
+src/pages/VoicePage.tsx:281: trailing whitespace.
+[32m+[m[32m                                ? 'bg-cyan-400 h-3'[m[41m [m
+src/pages/VoicePage.tsx:314: trailing whitespace.
+[32m+[m[32m              className="absolute w-72 h-72 rounded-full border border-cyan-400/20 animate-spin pointer-events-none"[m[41m [m
+src/pages/VoicePage.tsx:315: trailing whitespace.
+[32m+[m[32m              style={{ animationDuration: '24s' }}[m[41m [m
+src/pages/VoicePage.tsx:317: trailing whitespace.
+[32m+[m[32m            <div[m[41m [m
+src/pages/VoicePage.tsx:318: trailing whitespace.
+[32m+[m[32m              className="absolute w-60 h-60 rounded-full border border-indigo-400/25 animate-spin pointer-events-none"[m[41m [m
+src/pages/VoicePage.tsx:319: trailing whitespace.
+[32m+[m[32m              style={{ animationDuration: '16s', animationDirection: 'reverse' }}[m[41m [m
+src/pages/VoicePage.tsx:325: trailing whitespace.
+[32m+[m[32m                <div[m[41m [m
+src/pages/VoicePage.tsx:326: trailing whitespace.
+[32m+[m[32m                  className="absolute w-64 h-64 rounded-full border border-emerald-400/40 animate-ping pointer-events-none"[m[41m [m
+src/pages/VoicePage.tsx:327: trailing whitespace.
+[32m+[m[32m                  style={{ animationDuration: '2s' }}[m[41m [m
+src/pages/VoicePage.tsx:329: trailing whitespace.
+[32m+[m[32m                <div[m[41m [m
+src/pages/VoicePage.tsx:330: trailing whitespace.
+[32m+[m[32m                  className="absolute w-56 h-56 rounded-full border border-emerald-300/30 animate-pulse pointer-events-none"[m[41m [m
+src/pages/VoicePage.tsx:337: trailing whitespace.
+[32m+[m[32m              <div[m[41m [m
+src/pages/VoicePage.tsx:375: trailing whitespace.
+[32m+[m[32m          <div[m[41m [m
+src/pages/VoicePage.tsx:385: trailing whitespace.
+[32m+[m[32m                <div[m[41m [m
+src/pages/VoicePage.tsx:386: trailing whitespace.
+[32m+[m[32m                  key={msg.id}[m[41m [m
+src/pages/VoicePage.tsx:390: trailing whitespace.
+[32m+[m[32m                    msg.sender === 'user'[m[41m [m
+src/pages/VoicePage.tsx:391: trailing whitespace.
+[32m+[m[32m                      ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white'[m[41m [m
+src/types/index.ts:78: trailing whitespace.
+[32m+[m[32mexport type IntegrationProvider =[m[41m [m
+src/types/index.ts:79: trailing whitespace.
+[32m+[m[32m  | 'gmail'[m[41m [m
+src/types/index.ts:80: trailing whitespace.
+[32m+[m[32m  | 'google_calendar'[m[41m [m
+src/types/index.ts:81: trailing whitespace.
+[32m+[m[32m  | 'linkedin'[m[41m [m
+src/types/index.ts:82: trailing whitespace.
+[32m+[m[32m  | 'instagram'[m[41m [m
+src/types/index.ts:83: trailing whitespace.
+[32m+[m[32m  | 'x'[m[41m [m
+src/types/index.ts:84: trailing whitespace.
+[32m+[m[32m  | 'n8n'[m[41m [m
+src/types/index.ts:85: trailing whitespace.
+[32m+[m[32m  | 'slack'[m[41m [m
+src/types/index.ts:113: trailing whitespace.
+[32m+[m[32mexport type ChromeActionStatus =[m[41m [m
+src/types/index.ts:114: trailing whitespace.
+[32m+[m[32m  | 'QUEUED'[m[41m [m
+src/types/index.ts:115: trailing whitespace.
+[32m+[m[32m  | 'STARTING'[m[41m [m
+src/types/index.ts:116: trailing whitespace.
+[32m+[m[32m  | 'RUNNING'[m[41m [m
+src/types/index.ts:117: trailing whitespace.
+[32m+[m[32m  | 'WAITING_FOR_USER'[m[41m [m
+src/types/index.ts:118: trailing whitespace.
+[32m+[m[32m  | 'WAITING_FOR_APPROVAL'[m[41m [m
+src/types/index.ts:119: trailing whitespace.
+[32m+[m[32m  | 'COMPLETED'[m[41m [m
+src/types/index.ts:120: trailing whitespace.
+[32m+[m[32m  | 'FAILED'[m[41m [m
+src/types/index.ts:123: trailing whitespace.
+[32m+[m[32mexport type ChromeActionIntent =[m[41m [m
+src/types/index.ts:124: trailing whitespace.
+[32m+[m[32m  | 'conversation'[m[41m [m
+src/types/index.ts:125: trailing whitespace.
+[32m+[m[32m  | 'website_navigation'[m[41m [m
+src/types/index.ts:126: trailing whitespace.
+[32m+[m[32m  | 'website_search'[m[41m [m
+src/types/index.ts:127: trailing whitespace.
+[32m+[m[32m  | 'website_interaction'[m[41m [m
+src/types/index.ts:128: trailing whitespace.
+[32m+[m[32m  | 'external_application_operation'[m[41m [m
+src/types/index.ts:342: trailing whitespace.
+[32m+[m[32mexport type AppTab =[m[41m [m
+src/types/index.ts:343: trailing whitespace.
+[32m+[m[32m  | 'assistant'[m[41m [m
+src/types/index.ts:344: trailing whitespace.
+[32m+[m[32m  | 'memories'[m[41m [m
+src/types/index.ts:345: trailing whitespace.
+[32m+[m[32m  | 'tasks'[m[41m [m
+src/types/index.ts:346: trailing whitespace.
+[32m+[m[32m  | 'calendar'[m[41m [m
+src/types/index.ts:347: trailing whitespace.
+[32m+[m[32m  | 'actions'[m[41m [m
+src/types/index.ts:348: trailing whitespace.
+[32m+[m[32m  | 'documents'[m[41m [m

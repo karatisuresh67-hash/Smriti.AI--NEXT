@@ -38,11 +38,11 @@ export function ChatMessage({
       <div
         className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm ${
           isAssistant
-            ? 'bg-gradient-to-tr from-violet-600 to-indigo-600 text-white'
-            : 'bg-navy-950 text-white'
+            ? 'bg-gradient-to-tr from-cyan-500 to-indigo-600 text-white'
+            : 'bg-[#151D36] border border-[#1E2540] text-cyan-400'
         }`}
       >
-        {isAssistant ? <Brain className="w-4 h-4 text-accent-blue" /> : <User className="w-4 h-4" />}
+        {isAssistant ? <Brain className="w-4 h-4 text-white" /> : <User className="w-4 h-4" />}
       </div>
 
       {/* Message bubble */}
@@ -50,8 +50,8 @@ export function ChatMessage({
         <div
           className={`px-4 py-3 rounded-2xl shadow-sm text-sm leading-relaxed whitespace-pre-wrap break-words ${
             isAssistant
-              ? 'bg-white border border-slate-100 text-navy-900 rounded-tl-sm'
-              : 'bg-navy-950 text-white rounded-tr-sm'
+              ? 'bg-[#0B1024] border border-[#1E2540] text-slate-100 rounded-tl-sm'
+              : 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white rounded-tr-sm shadow-md'
           }`}
         >
           {message.content}
